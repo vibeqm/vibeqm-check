@@ -1,0 +1,12 @@
+# Dependency updates and vulnerability alerts. Add one entry per package manager
+# the project uses (npm, pip, gomod, cargo, bundler, ...).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # - package-ecosystem: npm
+  #   directory: /
+  #   schedule:
+  #     interval: weekly

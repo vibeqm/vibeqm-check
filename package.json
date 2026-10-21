@@ -1,0 +1,48 @@
+{
+  "name": "vqm-check",
+  "version": "0.4.0",
+  "description": "Self-assessment for the Vibe Quality Model (VibeQM): fact checks on a repository, with evidence for every gate",
+  "keywords": [
+    "vibe-quality-model",
+    "vqm",
+    "ai-coding",
+    "code-quality",
+    "self-assessment",
+    "maturity-model",
+    "ai-agents"
+  ],
+  "homepage": "https://github.com/vibeqm/vqm-check#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vibeqm/vqm-check.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vibeqm/vqm-check/issues"
+  },
+  "license": "MIT",
+  "author": "Eduardo Sanchez",
+  "type": "module",
+  "bin": {
+    "vqm-check": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc && node --test dist/test/*.test.js",
+    "start": "node dist/src/cli.js",
+    "prepublishOnly": "npm test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

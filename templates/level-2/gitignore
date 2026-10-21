@@ -1,0 +1,4 @@
+# Secrets stay out of the repository.
+.env
+.env.*
+!.env.example
