@@ -13,12 +13,15 @@ const SAMPLE = 100;
 
 export function agentRulesFile(root: string): CheckResult {
   const present = RULES_FILES.filter((f) => existsSync(join(root, f)));
-  // A git-ignored rules file stays on this machine: clones and CI never see it.
-  const ignored = present.filter((f) => (git(root, ["check-ignore", f]) ?? "").trim());
-  const found = present.filter((f) => !ignored.includes(f));
+  // A rules file that is not committed stays on this machine: clones and CI never see it.
+  // Outside git there is nothing to commit to, so a file on disk is all there is.
+  const inGit = git(root, ["rev-parse", "--git-dir"]) !== null;
+  const tracked = new Set((git(root, ["ls-files", "--", ...present]) ?? "").split("\n").filter(Boolean));
+  const local = inGit ? present.filter((f) => !tracked.has(f)) : [];
+  const found = present.filter((f) => !local.includes(f));
   const gate = "Agent rules file";
   if (!found.length) {
-    const note = ignored.length ? `; ${ignored.join(", ")} exists but is git-ignored, so clones and CI don't have it` : "";
+    const note = local.length ? `; ${local.join(", ")} exists but is not committed, so clones and CI don't have it` : "";
     return { level: 2, gate, status: "not-met", evidence: `none of ${RULES_FILES.join(", ")} found${note}` };
   }
   // A copied template still holding its blanks tells the agent nothing about this repository.

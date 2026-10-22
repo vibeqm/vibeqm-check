@@ -22,13 +22,19 @@ function repo(): string {
   return root;
 }
 
+/** Write and commit a file: the rules-file check counts only committed files. */
+function commit(root: string, f: string, text: string): void {
+  writeFileSync(join(root, f), text);
+  execFileSync("git", ["-C", root, "add", f], { stdio: "ignore" });
+}
+
 test("rules file: a copied template still holding its blanks is not met", () => {
   const root = repo();
-  writeFileSync(join(root, "AGENTS.md"), "# Rules\n- Build: <command>\n");
+  commit(root, "AGENTS.md", "# Rules\n- Build: <command>\n");
   const r = agentRulesFile(root);
   assert.equal(r.status, "not-met");
   assert.match(r.evidence, /AGENTS\.md still holds 1 template blank \(e\.g\. "<command>"\)/);
-  writeFileSync(join(root, "CLAUDE.md"), "# Rules\n- Build: make\n");
+  commit(root, "CLAUDE.md", "# Rules\n- Build: make\n");
   assert.equal(agentRulesFile(root).status, "met", "one filled rules file is enough; the blank one is named");
   assert.match(agentRulesFile(root).evidence, /CLAUDE\.md \(3 lines\); AGENTS\.md still holds/);
 });
@@ -37,6 +43,8 @@ test("rules file: missing is not met, present is met", () => {
   const root = repo();
   assert.equal(agentRulesFile(root).status, "not-met");
   writeFileSync(join(root, "AGENTS.md"), "# Rules\n");
+  assert.equal(agentRulesFile(root).status, "not-met", "on disk but never added to git");
+  commit(root, "AGENTS.md", "# Rules\n");
   assert.equal(agentRulesFile(root).status, "met");
 });
 

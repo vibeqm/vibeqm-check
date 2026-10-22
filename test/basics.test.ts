@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
@@ -265,9 +265,18 @@ test("agent permissions: an unreadable settings file is not a limit", () => {
   assert.equal(denied.status, "met");
 });
 
-test("agent rules file: a git-ignored CLAUDE.md does not count", () => {
+test("agent rules file: a git-ignored or never-committed rules file does not count", () => {
   const ignored = agentRulesFile(repo({ ".gitignore": "CLAUDE.md\n", "CLAUDE.md": "# Rules\nRun the tests before every commit.\n" }));
   assert.equal(ignored.status, "not-met");
-  assert.match(ignored.evidence, /git-ignored/);
+  assert.match(ignored.evidence, /not committed/);
+  const untracked = repo({});
+  writeFileSync(join(untracked, "AGENTS.md"), "# Rules\nRun the tests before every commit.\n");
+  assert.equal(agentRulesFile(untracked).status, "not-met", "never committed, though not ignored");
   assert.equal(agentRulesFile(repo({ "CLAUDE.md": "# Rules\nRun the tests before every commit.\n" })).status, "met");
+});
+
+test("configuration basics: the tool's own source does not read as a secret", () => {
+  const src = readFileSync(new URL("../../src/checks/basics.ts", import.meta.url), "utf8");
+  const r = configurationBasics(repo({ "package.json": "{}\n", "package-lock.json": "{}\n", "src/basics.ts": src }, true));
+  assert.doesNotMatch(r.evidence, /secret/i);
 });

@@ -307,7 +307,7 @@ const FIXES: Record<string, Maker> = {
     steps: [
       "Write the three risk classes (low, standard, high) into the standard, with this project's examples.",
       "Review the last 20 merged changes: class each one and note who reviewed it (a person, or a model from a different company).",
-      "Record the result in `vqm-proof.json` (gate \"Risk classes and independent review\").",
+      "Record the result in `vqm-proof.json` (gate \"Risk classes and peer review by risk\").",
     ],
     verify: RERUN,
     minutes: 40,

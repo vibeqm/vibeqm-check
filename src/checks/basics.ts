@@ -402,7 +402,8 @@ export function devApartFromProd(root: string): CheckResult {
   return r(2, gate, shownEnvs.length && confirm.length ? "met" : "not-met", ev);
 }
 
-const SECRET = /-----BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk-[A-Za-z0-9_-]{32,}|xox[baprs]-[A-Za-z0-9-]{10,}/;
+// The dashes are counted ({5}) so this file does not hold a key header and flag itself.
+const SECRET = /-{5}BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-{5}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk-[A-Za-z0-9_-]{32,}|xox[baprs]-[A-Za-z0-9-]{10,}/;
 const LOCKS: Record<string, string[]> = {
   "package.json": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock"],
   "pyproject.toml": ["poetry.lock", "uv.lock", "pdm.lock", "requirements.txt"],
