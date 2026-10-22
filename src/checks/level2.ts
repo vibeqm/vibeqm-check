@@ -16,7 +16,8 @@ export function agentRulesFile(root: string): CheckResult {
   // A rules file that is not committed stays on this machine: clones and CI never see it.
   // Outside git there is nothing to commit to, so a file on disk is all there is.
   const inGit = git(root, ["rev-parse", "--git-dir"]) !== null;
-  const tracked = new Set((git(root, ["ls-files", "--", ...present]) ?? "").split("\n").filter(Boolean));
+  // HEAD, not the index: a staged file is not in any clone yet. No commits yet means none.
+  const tracked = new Set((git(root, ["ls-tree", "-r", "--name-only", "HEAD", "--", ...present]) ?? "").split("\n").filter(Boolean));
   const local = inGit ? present.filter((f) => !tracked.has(f)) : [];
   const found = present.filter((f) => !local.includes(f));
   const gate = "Agent rules file";

@@ -26,6 +26,7 @@ function repo(): string {
 function commit(root: string, f: string, text: string): void {
   writeFileSync(join(root, f), text);
   execFileSync("git", ["-C", root, "add", f], { stdio: "ignore" });
+  execFileSync("git", ["-C", root, "commit", "-q", "-m", `add ${f}`], { stdio: "ignore" });
 }
 
 test("rules file: a copied template still holding its blanks is not met", () => {
@@ -44,6 +45,8 @@ test("rules file: missing is not met, present is met", () => {
   assert.equal(agentRulesFile(root).status, "not-met");
   writeFileSync(join(root, "AGENTS.md"), "# Rules\n");
   assert.equal(agentRulesFile(root).status, "not-met", "on disk but never added to git");
+  execFileSync("git", ["-C", root, "add", "AGENTS.md"], { stdio: "ignore" });
+  assert.equal(agentRulesFile(root).status, "not-met", "staged is not committed: clones don't have it");
   commit(root, "AGENTS.md", "# Rules\n");
   assert.equal(agentRulesFile(root).status, "met");
 });
