@@ -153,9 +153,9 @@ export function agentPermissions(root: string): CheckResult {
   const found: string[] = [];
   const machine: string[] = [];
   const unreadable: string[] = [];
-  for (const { file, committed } of committedSettings(root)) {
+  for (const { file, committed, text } of committedSettings(root)) {
     try {
-      const s = JSON.parse(readFileSync(file, "utf8"));
+      const s = JSON.parse(text ?? "");
       const deny: string[] = s?.permissions?.deny ?? [];
       const into = committed ? found : machine;
       if (deny.length) into.push(`${deny.length} deny rules in ${file}`);

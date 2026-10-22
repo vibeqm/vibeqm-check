@@ -359,18 +359,27 @@ function environmentsShown(root: string, files: string[], unfilled: string[] = [
   return shown;
 }
 
-/** Where the agent is told, or made, to ask before publishing live. */
-/** Claude Code settings files that count as the repository's: committed in HEAD. The
- * user's ~/.claude/settings.json and an uncommitted project file limit this machine only. */
-export function committedSettings(root: string): { file: string; committed: boolean }[] {
+/** Claude Code settings files that count as the repository's: committed in HEAD, read as
+ * committed (uncommitted edits are not in any clone). The user's ~/.claude/settings.json
+ * and an uncommitted project file limit this machine only. A file that can't be read
+ * has text null. */
+export function committedSettings(root: string): { file: string; committed: boolean; text: string | null }[] {
   const project = [".claude/settings.json", ".claude/settings.local.json"];
   const inHead = new Set((git(root, ["ls-tree", "-r", "--name-only", "HEAD", "--", ...project]) ?? "").split("\n").filter(Boolean));
+  const disk = (file: string) => {
+    try {
+      return readFileSync(file, "utf8");
+    } catch {
+      return null;
+    }
+  };
   return [
-    ...project.map((f) => ({ file: join(root, f), committed: inHead.has(f) })),
-    { file: join(homedir(), ".claude", "settings.json"), committed: false },
-  ].filter((s) => existsSync(s.file));
+    ...project.map((f) => (inHead.has(f) ? { file: join(root, f), committed: true, text: git(root, ["show", `HEAD:${f}`]) } : { file: join(root, f), committed: false, text: disk(join(root, f)) })),
+    { file: join(homedir(), ".claude", "settings.json"), committed: false, text: disk(join(homedir(), ".claude", "settings.json")) },
+  ].filter((s) => s.committed || existsSync(s.file));
 }
 
+/** Where the agent is told, or made, to ask before publishing live. */
 function confirmationRule(root: string): { found: string[]; machineOnly: string[] } {
   const found: string[] = [];
   const machineOnly: string[] = [];
@@ -382,9 +391,9 @@ function confirmationRule(root: string): { found: string[]; machineOnly: string[
     if (line) found.push(`${f}: "${line.replace(/^[-*\s]+/, "").trim().slice(0, 100)}"`);
   }
   // Only settings committed to the repository count; this machine's settings are named, not counted.
-  for (const { file, committed } of committedSettings(root)) {
+  for (const { file, committed, text } of committedSettings(root)) {
     try {
-      const p = JSON.parse(readFileSync(file, "utf8"))?.permissions ?? {};
+      const p = JSON.parse(text ?? "")?.permissions ?? {};
       const hits = [...(p.ask ?? []), ...(p.deny ?? [])].filter((x: unknown) => typeof x === "string" && /^Bash\(/.test(x) && DEPLOY_COMMAND.test(x));
       if (!hits.length) continue;
       const list = `${hits.slice(0, 3).join(", ")}${hits.length > 3 ? "…" : ""}`;

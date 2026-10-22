@@ -265,8 +265,12 @@ test("agent permissions: an unreadable settings file is not a limit", () => {
   assert.equal(denied.status, "met");
 });
 
-test("agent permissions and the publish rule: only settings committed to the repository count", () => {
+test("agent permissions and the publish rule: only settings committed to the repository count", (t) => {
   const home = mkdtempSync(join(tmpdir(), "vqm-home-"));
+  const before = process.env.HOME;
+  t.after(() => {
+    process.env.HOME = before;
+  });
   process.env.HOME = home;
   const deny = JSON.stringify({ permissions: { deny: ["Bash(git push --force*)"], ask: ["Bash(npm publish*)"] } });
   mkdirSync(join(home, ".claude"), { recursive: true });
@@ -287,6 +291,10 @@ test("agent permissions and the publish rule: only settings committed to the rep
   // Committed, it counts.
   assert.equal(agentPermissions(repo({ ".claude/settings.json": deny })).status, "met");
   assert.equal(devApartFromProd(repo({ "AGENTS.md": envs, ".claude/settings.json": deny })).status, "met");
+  // Edits not committed yet are not in any clone: the committed version is read.
+  const edited = repo({ ".claude/settings.json": JSON.stringify({ permissions: {} }) });
+  writeFileSync(join(edited, ".claude", "settings.json"), deny);
+  assert.equal(agentPermissions(edited).status, "not-visible");
 });
 
 test("agent rules file: a git-ignored or never-committed rules file does not count", () => {
