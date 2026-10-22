@@ -222,7 +222,7 @@ const FIXES: Record<string, Maker> = {
   "Agent permissions": () => ({
     why: "An agent that can run anything can delete, leak or force-push anything.",
     steps: [
-      'Add deny rules to `.claude/settings.json` (or the user\'s `~/.claude/settings.json`): `"permissions": {"deny": ["Bash(git push --force*)", "Bash(git push -f*)", "Bash(git commit --no-verify*)", "Bash(rm -rf /*)", "Bash(rm -rf ~*)", "Read(./.env*)", "Read(**/.env*)"]}`, plus the paths of any credentials this project uses.',
+      'Add deny rules to `.claude/settings.json` and commit it (the user\'s `~/.claude/settings.json` limits one machine only; clones and CI don\'t have it): `"permissions": {"deny": ["Bash(git push --force*)", "Bash(git push -f*)", "Bash(git commit --no-verify*)", "Bash(rm -rf /*)", "Bash(rm -rf ~*)", "Read(./.env*)", "Read(**/.env*)"]}`, plus the paths of any credentials this project uses.',
       "Keep production credentials and secrets out of the agent's environment.",
     ],
     verify: "Try one denied command (e.g. `git commit --no-verify --dry-run`) and confirm it is refused. " + RERUN,

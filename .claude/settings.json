@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push --no-verify*)",
+      "Bash(git push * --no-verify*)",
+      "Bash(git commit --no-verify*)",
+      "Bash(git commit * --no-verify*)",
+      "Bash(git commit -n *)",
+      "Bash(git push --delete*)",
+      "Bash(git push * --delete*)",
+      "Bash(git push -d *)",
+      "Bash(git push * -d *)",
+      "Bash(git push * :**)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(rm -rf ..*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.npmrc)",
+      "Read(./.npmrc)"
+    ],
+    "ask": [
+      "Bash(npm publish*)",
+      "Bash(npm unpublish*)",
+      "Bash(npm deprecate*)",
+      "Bash(npm dist-tag*)",
+      "Bash(npx npm publish*)",
+      "Bash(gh release*)",
+      "Bash(git push --tags*)",
+      "Bash(git push * --tags*)",
+      "Bash(git push * v*)",
+      "Bash(git push * refs/tags/*)"
+    ]
+  }
+}

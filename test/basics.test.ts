@@ -265,6 +265,30 @@ test("agent permissions: an unreadable settings file is not a limit", () => {
   assert.equal(denied.status, "met");
 });
 
+test("agent permissions and the publish rule: only settings committed to the repository count", () => {
+  const home = mkdtempSync(join(tmpdir(), "vqm-home-"));
+  process.env.HOME = home;
+  const deny = JSON.stringify({ permissions: { deny: ["Bash(git push --force*)"], ask: ["Bash(npm publish*)"] } });
+  mkdirSync(join(home, ".claude"), { recursive: true });
+  writeFileSync(join(home, ".claude", "settings.json"), deny);
+  // This machine's settings alone: real limits here, but clones and CI don't have them.
+  const machine = agentPermissions(repo({}));
+  assert.equal(machine.status, "not-visible");
+  assert.match(machine.evidence, /not committed, so other clones and CI don't have them/);
+  const envs = "## Environments\n- Development: this machine.\n- Production: https://example.com.\n";
+  const dev = devApartFromProd(repo({ "AGENTS.md": envs }));
+  assert.equal(dev.status, "not-met", "an ask rule on this machine only is not the repository's rule");
+  assert.match(dev.evidence, /found only in .*which other clones and CI don't have/);
+  // A project settings file that was never committed is this machine's too.
+  const untracked = repo({});
+  mkdirSync(join(untracked, ".claude"));
+  writeFileSync(join(untracked, ".claude", "settings.json"), deny);
+  assert.equal(agentPermissions(untracked).status, "not-visible");
+  // Committed, it counts.
+  assert.equal(agentPermissions(repo({ ".claude/settings.json": deny })).status, "met");
+  assert.equal(devApartFromProd(repo({ "AGENTS.md": envs, ".claude/settings.json": deny })).status, "met");
+});
+
 test("agent rules file: a git-ignored or never-committed rules file does not count", () => {
   const ignored = agentRulesFile(repo({ ".gitignore": "CLAUDE.md\n", "CLAUDE.md": "# Rules\nRun the tests before every commit.\n" }));
   assert.equal(ignored.status, "not-met");

@@ -360,8 +360,20 @@ function environmentsShown(root: string, files: string[], unfilled: string[] = [
 }
 
 /** Where the agent is told, or made, to ask before publishing live. */
-function confirmationRule(root: string): string[] {
+/** Claude Code settings files that count as the repository's: committed in HEAD. The
+ * user's ~/.claude/settings.json and an uncommitted project file limit this machine only. */
+export function committedSettings(root: string): { file: string; committed: boolean }[] {
+  const project = [".claude/settings.json", ".claude/settings.local.json"];
+  const inHead = new Set((git(root, ["ls-tree", "-r", "--name-only", "HEAD", "--", ...project]) ?? "").split("\n").filter(Boolean));
+  return [
+    ...project.map((f) => ({ file: join(root, f), committed: inHead.has(f) })),
+    { file: join(homedir(), ".claude", "settings.json"), committed: false },
+  ].filter((s) => existsSync(s.file));
+}
+
+function confirmationRule(root: string): { found: string[]; machineOnly: string[] } {
   const found: string[] = [];
+  const machineOnly: string[] = [];
   const rules = RULES_FILES.filter((f) => existsSync(join(root, f)));
   for (const f of rules) {
     const line = read(root, f)
@@ -369,19 +381,20 @@ function confirmationRule(root: string): string[] {
       .find((l) => ((PUBLISH.test(l) && CONFIRM.test(l)) || FORBID.test(l)) && !/^\s*#/.test(l) && !placeholders(l).length);
     if (line) found.push(`${f}: "${line.replace(/^[-*\s]+/, "").trim().slice(0, 100)}"`);
   }
-  const settings = [join(root, ".claude", "settings.json"), join(root, ".claude", "settings.local.json"), join(homedir(), ".claude", "settings.json")];
-  for (const file of settings) {
-    if (!existsSync(file)) continue;
+  // Only settings committed to the repository count; this machine's settings are named, not counted.
+  for (const { file, committed } of committedSettings(root)) {
     try {
       const p = JSON.parse(readFileSync(file, "utf8"))?.permissions ?? {};
       const hits = [...(p.ask ?? []), ...(p.deny ?? [])].filter((x: unknown) => typeof x === "string" && /^Bash\(/.test(x) && DEPLOY_COMMAND.test(x));
-      const where = file.startsWith(homedir()) && !file.startsWith(root) ? `${file} (this machine's settings, not the repository's)` : file.slice(root.length + 1);
-      if (hits.length) found.push(`publish commands that stop for the person or are refused in ${where}: ${hits.slice(0, 3).join(", ")}${hits.length > 3 ? "…" : ""}`);
+      if (!hits.length) continue;
+      const list = `${hits.slice(0, 3).join(", ")}${hits.length > 3 ? "…" : ""}`;
+      if (committed) found.push(`publish commands that stop for the person or are refused in ${file.slice(root.length + 1)}: ${list}`);
+      else machineOnly.push(`${file} (this machine's settings, not committed): ${list}`);
     } catch {
       /* unreadable settings: agentPermissions reports it */
     }
   }
-  return found;
+  return { found, machineOnly };
 }
 
 export function devApartFromProd(root: string): CheckResult {
@@ -391,13 +404,13 @@ export function devApartFromProd(root: string): CheckResult {
   const envs = environmentsShown(root, files, unfilled);
   // "<the live address, or "nothing is live yet">" is a template's choice, not a statement.
   const notLive = [...RULES_FILES, "README.md"].map((f) => read(root, f).split("\n").find((l) => NOT_LIVE.test(l) && !placeholders(l).length)).find(Boolean);
-  const confirm = confirmationRule(root);
+  const { found: confirm, machineOnly } = confirmationRule(root);
   const shownEnvs = envs.length ? envs : notLive ? [`not live yet: "${notLive.trim().slice(0, 80)}"`] : [];
   const ev = [
     shownEnvs.length
       ? `environments: ${shownEnvs.slice(0, 2).join("; ")}`
       : `no development and production environments named in the repository (in the rules file, the README or a note) or shown by config files${unfilled.length ? `: ${unfilled[0]}` : ""}`,
-    confirm.length ? `confirmation before publishing live: ${confirm.slice(0, 2).join("; ")}` : "no rule that the agent publishes live only after the person confirms (a line in the rules file, or an ask or deny rule on publish commands in the agent's settings)",
+    confirm.length ? `confirmation before publishing live: ${confirm.slice(0, 2).join("; ")}` : `no rule that the agent publishes live only after the person confirms (a line in the rules file, or an ask or deny rule on publish commands in the agent's settings committed to the repository)${machineOnly.length ? `; found only in ${machineOnly[0]}, which other clones and CI don't have` : ""}`,
   ].join("; ");
   return r(2, gate, shownEnvs.length && confirm.length ? "met" : "not-met", ev);
 }

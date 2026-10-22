@@ -1,11 +1,10 @@
 // Level 2 (Guarded) fact checks, from ASSESSOR.md v0.3 §2. Judgment questions are
 // left to the AI assessor; this file only reports what a script can prove.
 import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
-import { homedir } from "node:os";
 import { join, relative } from "node:path";
 import { commitSizes, git, median } from "../git.js";
 import { defaultBranchRuns, mergedPullRequests } from "../host.js";
-import { blanksNote, CHECK_COMMANDS, code, delegated, placeholders, RULES_FILES } from "./basics.js";
+import { blanksNote, CHECK_COMMANDS, code, committedSettings, delegated, placeholders, RULES_FILES } from "./basics.js";
 import type { CheckResult } from "../types.js";
 
 const SMALL_BATCH_LIMIT = 400; // ASSESSOR §2: median changed lines per merged change
@@ -148,38 +147,35 @@ export function ownerPerChange(root: string): CheckResult {
   };
 }
 
-/** Claude Code deny rules or a sandbox, in the project or the user's settings. */
+/** Claude Code deny rules or a sandbox, in settings committed to the repository. */
 export function agentPermissions(root: string): CheckResult {
   const gate = "Agent permissions";
-  const sources = [
-    join(root, ".claude", "settings.json"),
-    join(root, ".claude", "settings.local.json"),
-    join(homedir(), ".claude", "settings.json"),
-  ];
   const found: string[] = [];
+  const machine: string[] = [];
   const unreadable: string[] = [];
-  for (const file of sources) {
-    if (!existsSync(file)) continue;
+  for (const { file, committed } of committedSettings(root)) {
     try {
       const s = JSON.parse(readFileSync(file, "utf8"));
       const deny: string[] = s?.permissions?.deny ?? [];
-      const where = file.startsWith(homedir()) && !file.startsWith(root) ? `${file} (this machine's settings, not the repository's: other clones and CI don't have them)` : file;
-      if (deny.length) found.push(`${deny.length} deny rules in ${where}`);
-      if (s?.sandbox?.enabled) found.push(`sandbox enabled in ${where}`);
+      const into = committed ? found : machine;
+      if (deny.length) into.push(`${deny.length} deny rules in ${file}`);
+      if (s?.sandbox?.enabled) into.push(`sandbox enabled in ${file}`);
     } catch {
       unreadable.push(`unreadable settings: ${file}`);
     }
   }
   if (!found.length) {
+    // Limits on this machine are real here, but clones and CI don't have them: a person can attest them.
+    const local = machine.length ? [`${machine.join("; ")}: this machine's settings, not committed, so other clones and CI don't have them; commit .claude/settings.json, or attach proof that every machine working on this repository has them`] : [];
     return {
       level: 2,
       gate,
       status: "not-visible",
       // An unreadable file is not a limit: it says so, and never meets the gate.
-      evidence: [...unreadable, "no Claude Code deny rules or sandbox found; other agents' settings are not read yet. Attach proof of limits"].join("; "),
+      evidence: [...unreadable, ...local, ...(local.length ? [] : ["no Claude Code deny rules or sandbox committed; other agents' settings are not read yet. Attach proof of limits"])].join("; "),
     };
   }
-  return { level: 2, gate, status: "met", evidence: [...found, ...unreadable].join("; ") };
+  return { level: 2, gate, status: "met", evidence: [...found, ...machine.map((m) => `also ${m} (this machine only)`), ...unreadable].join("; ") };
 }
 
 /** A CI run on the default branch that failed, then a later run of the same workflow

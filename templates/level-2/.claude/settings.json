@@ -15,7 +15,7 @@
       "Bash(git push * --delete*)",
       "Bash(git push -d *)",
       "Bash(git push * -d *)",
-      "Bash(git push * :*)",
+      "Bash(git push * :**)",
       "Bash(rm -rf /*)",
       "Bash(rm -rf ~*)",
       "Bash(rm -rf ..*)",
