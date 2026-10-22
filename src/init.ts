@@ -1,4 +1,4 @@
-// `vqm-check init`: create the Level 2 template files in a repository. It
+// `vibeqm-check init`: create the Level 2 template files in a repository. It
 // lists what it will create, skips what exists, and writes only after the
 // person says yes: never over a file, never a commit, never a hook.
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
@@ -54,8 +54,8 @@ export function writeInit(root: string, plan: InitFile[]): string[] {
 
 export const NEXT_STEPS = `Next:
   1. Fill every <...> in the new files with this repository's facts, and delete
-     what doesn't apply. vqm-check doesn't count a file that still has them.
+     what doesn't apply. vibeqm-check doesn't count a file that still has them.
   2. In .github/workflows/checks.yml, uncomment or write your build, tests and
      linter. Add your package managers to .github/dependabot.yml.
   3. Commit the files, and make the checks required on your main branch.
-  4. Run vqm-check again to see what is still open.`;
+  4. Run vibeqm-check again to see what is still open.`;

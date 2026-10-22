@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copy the Level 2 templates from the companion repository (vibeqm/vqm, checked out
-# beside this one) into templates/, which `vqm-check init` writes from. The companion
+# beside this one) into templates/, which `vibeqm-check init` writes from. The companion
 # repository is the source; edit the templates there, then run this.
 # npm leaves .gitignore files out of a package, so it is bundled as "gitignore".
 set -eu

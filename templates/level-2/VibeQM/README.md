@@ -13,4 +13,4 @@ The index. People and agents read this first. Replace every <...>.
 
 ## Where we stand
 
-<VibeQM vX.Y.Z self-assessed: Level N, DATE, by whom. Run `npx vqm-check` to see it.>
+<VibeQM vX.Y.Z self-assessed: Level N, DATE, by whom. Run `npx vibeqm-check` to see it.>

@@ -24,7 +24,7 @@ test("the agent prompt orders fixes cheapest first and forbids faking", () => {
   ];
   const p = agentPrompt(open, 3);
   assert.ok(p.indexOf("Models pinned") < p.indexOf("Documentation standard"));
-  assert.match(p, /never edit vqm-check/);
+  assert.match(p, /never edit vibeqm-check/);
   assert.match(p, /ask them first/);
 });
 

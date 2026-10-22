@@ -1,6 +1,6 @@
 {
-  "name": "vqm-check",
-  "version": "0.4.1",
+  "name": "vibeqm-check",
+  "version": "0.4.2",
   "description": "Self-assessment for the Vibe Quality Model (VibeQM): fact checks on a repository, with evidence for every gate",
   "keywords": [
     "vibe-quality-model",
@@ -9,20 +9,22 @@
     "code-quality",
     "self-assessment",
     "maturity-model",
-    "ai-agents"
+    "ai-agents",
+    "vibeqm"
   ],
-  "homepage": "https://github.com/vibeqm/vqm-check#readme",
+  "homepage": "https://github.com/vibeqm/vibeqm-check#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vibeqm/vqm-check.git"
+    "url": "git+https://github.com/vibeqm/vibeqm-check.git"
   },
   "bugs": {
-    "url": "https://github.com/vibeqm/vqm-check/issues"
+    "url": "https://github.com/vibeqm/vibeqm-check/issues"
   },
   "license": "MIT",
   "author": "Eduardo Sanchez",
   "type": "module",
   "bin": {
+    "vibeqm-check": "dist/src/cli.js",
     "vqm-check": "dist/src/cli.js"
   },
   "files": [

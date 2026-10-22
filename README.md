@@ -1,4 +1,4 @@
-# vqm-check
+# vibeqm-check
 
 A free self-assessment for the **Vibe Quality Model (VibeQM)**: run it on a git
 repository and it tells you the level the evidence supports, what is missing for
@@ -13,23 +13,27 @@ Five levels, each defined by evidence anyone can open. More at
 ## Run it
 
 ```bash
-npx vqm-check            # in the repository to assess
-npx vqm-check path/to/repo
-npx vqm-check --json     # machine-readable results
-npx vqm-check --out report.md   # write the report to a file (or report.json)
-npx vqm-check --offline  # never ask the code host
-npx vqm-check init       # create the Level 2 template files, after you confirm
-npx vqm-check --help
+npx vibeqm-check            # in the repository to assess
+npx vibeqm-check path/to/repo
+npx vibeqm-check --json     # machine-readable results
+npx vibeqm-check --out report.md   # write the report to a file (or report.json)
+npx vibeqm-check --offline  # never ask the code host
+npx vibeqm-check init       # create the Level 2 template files, after you confirm
+npx vibeqm-check --help
 ```
 
 Requires Node.js 20 or later and git.
+
+The tool was first called `vqm-check`, the name the first editions of the book use.
+npm publishes it as `vibeqm-check`; installed (`npm install -g vibeqm-check`), it
+answers to both names.
 
 ## Read-only and private
 
 - **It changes nothing on its own.** The tool reads the repository and its git
   history; it writes no files, commits, settings or hooks. There are two
   exceptions, both only when you ask: a report you request with `--out`, written
-  where you say, and the template files `vqm-check init` creates after you
+  where you say, and the template files `vibeqm-check init` creates after you
   confirm the list. Neither ever overwrites an existing file, and neither commits.
 - **It sends nothing to us.** There is no account, no telemetry and no server of ours
   involved: the checks run on your machine, and the report is printed there.
@@ -41,11 +45,11 @@ Requires Node.js 20 or later and git.
   your coding agent.
 
 Inside an AI coding agent, run it as a shell command (in Claude Code:
-`! npx vqm-check`). The report is written so the agent can act on it.
+`! npx vibeqm-check`). The report is written so the agent can act on it.
 
 ## Start from the templates
 
-`npx vqm-check init` creates the files a repository needs for Level 2: a rules file
+`npx vibeqm-check init` creates the files a repository needs for Level 2: a rules file
 for AI agents (`AGENTS.md`), agent permissions, a CI workflow with secret scanning
 and static security analysis, issue and pull request templates, and short
 requirements, decisions and plan files under `VibeQM/`. It shows the list first,
@@ -126,7 +130,7 @@ that caused it. The report appears on the run's summary page.
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }      # the checks sample history
-- uses: vibeqm/vqm-check@v0.4.1
+- uses: vibeqm/vibeqm-check@v0.4.2
   with: { min-level: 2 }        # optional: fail the run below this level
 ```
 
@@ -136,7 +140,7 @@ Pass `offline: true` to read the repository only.
 
 ## What it is, and what it is not
 
-`vqm-check` is the scripted half of the VibeQM assessment procedure: the facts a command
+`vibeqm-check` is the scripted half of the VibeQM assessment procedure: the facts a command
 can establish. A formal VibeQM assessment adds judgment by two AI models from different
 companies, the lower result standing if they disagree, and a person's countersignature.
 A result is stated as **"VibeQM self-assessed: Level N"**, with the date and the assessor.

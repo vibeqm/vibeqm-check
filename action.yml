@@ -1,4 +1,4 @@
-name: vqm-check
+name: vibeqm-check
 description: Run the Vibe Quality Model (VibeQM) fact checks on this repository and report every gate with evidence
 inputs:
   path:
@@ -26,7 +26,7 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version: 22
-    - name: Build vqm-check
+    - name: Build vibeqm-check
       shell: bash
       working-directory: ${{ github.action_path }}
       run: npm ci --silent && npm run build --silent
@@ -48,7 +48,7 @@ runs:
         # The step summary is for people: everything but the agent prompt, which
         # they can get by running the tool locally.
         awk '/^## Prompt for your AI coding agent/{exit} 1' "$RUNNER_TEMP/vqm-report.md" >> "$GITHUB_STEP_SUMMARY"
-        echo "_The full report, including the prompt your AI coding agent can follow, is not shown here; run \`npx vqm-check\` in this repository for it._" >> "$GITHUB_STEP_SUMMARY"
+        echo "_The full report, including the prompt your AI coding agent can follow, is not shown here; run \`npx vibeqm-check\` in this repository for it._" >> "$GITHUB_STEP_SUMMARY"
         level=$(node -p "require(process.env.RUNNER_TEMP + '/vqm-report.json').level")
         echo "level=$level" >> "$GITHUB_OUTPUT"
         echo "VibeQM fact checks: level $level"

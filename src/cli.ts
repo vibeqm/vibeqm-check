@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// vqm-check [path] [--json] [--all] [--offline] [--proof <file>] [--out <file>]:
-// run the VibeQM fact checks on a repository. vqm-check init [path] [--yes]: create the
+// vibeqm-check [path] [--json] [--all] [--offline] [--proof <file>] [--out <file>]:
+// run the VibeQM fact checks on a repository. vibeqm-check init [path] [--yes]: create the
 // Level 2 template files.
 import { existsSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -21,7 +21,7 @@ const args = process.argv.slice(2);
 if (args[0] === "init") {
   const rest = args.slice(1);
   if (rest.includes("--help") || rest.includes("-h")) {
-    console.log(`vqm-check init [path] [--yes]
+    console.log(`vibeqm-check init [path] [--yes]
 
 Create the VibeQM Level 2 template files in a repository: a rules file for AI agents,
 agent permissions, a CI workflow with security checks, issue and pull request
@@ -37,18 +37,18 @@ More: https://vibeqm.com`);
   }
   const unknown = rest.filter((a) => a.startsWith("-") && a !== "--yes");
   if (unknown.length) {
-    console.error(`vqm-check init: unknown option ${unknown[0]}; see vqm-check init --help`);
+    console.error(`vibeqm-check init: unknown option ${unknown[0]}; see vibeqm-check init --help`);
     process.exit(2);
   }
   const target = resolve(rest.find((a) => !a.startsWith("-")) ?? ".");
   if (!existsSync(target) || !statSync(target).isDirectory()) {
-    console.error(`vqm-check init: ${target} is not a folder`);
+    console.error(`vibeqm-check init: ${target} is not a folder`);
     process.exit(2);
   }
   const plan = planInit(target);
   const missing = plan.filter((f) => !f.exists);
   const present = plan.filter((f) => f.exists);
-  console.log(`vqm-check init: the VibeQM Level 2 templates for ${target}\n`);
+  console.log(`vibeqm-check init: the VibeQM Level 2 templates for ${target}\n`);
   if (present.length) console.log(`Already there, left as they are:\n${present.map((f) => `  ${f.to}`).join("\n")}\n`);
   if (!missing.length) {
     console.log("Nothing to create.");
@@ -57,7 +57,7 @@ More: https://vibeqm.com`);
   console.log(`Will create:\n${missing.map((f) => `  ${f.to}`).join("\n")}\n`);
   if (!rest.includes("--yes")) {
     if (!process.stdin.isTTY) {
-      console.error("vqm-check init: not run in a terminal, so nothing was written. Pass --yes to create the files.");
+      console.error("vibeqm-check init: not run in a terminal, so nothing was written. Pass --yes to create the files.");
       process.exit(2);
     }
     const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -74,8 +74,8 @@ More: https://vibeqm.com`);
 }
 
 if (args.includes("--help") || args.includes("-h")) {
-  console.log(`vqm-check [path] [--json] [--all] [--offline] [--proof <file>] [--out <file>]
-vqm-check init [path] [--yes]
+  console.log(`vibeqm-check [path] [--json] [--all] [--offline] [--proof <file>] [--out <file>]
+vibeqm-check init [path] [--yes]
 
 Assess a git repository against the Vibe Quality Model (VibeQM) and print a report:
 the level the evidence supports, every Level 2 and Level 3 check as Met, Not met
@@ -93,7 +93,7 @@ to confirm it, and a prompt your AI coding agent can follow.
   -h, --help      show this help
 
   init            create the Level 2 template files, after you confirm; see
-                  vqm-check init --help
+                  vibeqm-check init --help
 
 Read-only and private. The tool reads the repository and its git history on this
 machine, writes nothing except a report file you ask for with --out (or the
@@ -112,7 +112,7 @@ const oi = args.indexOf("--out");
 const outArg = oi >= 0 ? args[oi + 1] : undefined;
 // "--out --json" must not write a file named --json, and a bare --out must not pass silently.
 if (oi >= 0 && (!outArg || outArg.startsWith("-"))) {
-  console.error("vqm-check: --out needs a file name, for example --out report.md");
+  console.error("vibeqm-check: --out needs a file name, for example --out report.md");
   process.exit(2);
 }
 const root = resolve(args.find((a, i) => !a.startsWith("--") && (pi < 0 || i !== pi + 1) && (oi < 0 || i !== oi + 1)) ?? ".");
@@ -126,7 +126,7 @@ if (proofFiles.length) {
     const inside = (f: string | undefined) => (f && resolve(f).startsWith(`${root}/`) ? root : null);
     results = applyProofs(results, merged.proofs, proofFile as string, new Date(), (p) => inside(merged.sources.get(p)));
   } catch (e) {
-    console.error(`vqm-check: ${(e as Error).message}`);
+    console.error(`vibeqm-check: ${(e as Error).message}`);
     process.exit(2);
   }
 }
@@ -159,7 +159,7 @@ if (outArg) {
     writeFileSync(target, `${/\.json$/i.test(target) ? jsonOut : markdown(root, results, date, proofFile)}\n`, { flag: "wx" });
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "EEXIST") {
-      console.error(`vqm-check: ${target} already exists; --out never overwrites. Choose a new name.`);
+      console.error(`vibeqm-check: ${target} already exists; --out never overwrites. Choose a new name.`);
       process.exit(2);
     }
     throw e;

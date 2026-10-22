@@ -47,7 +47,7 @@ function parts(results: CheckResult[]): Parts {
 /** The answer first: the level, and what the next one takes, in a few sentences. */
 /** Said on every report: what the tool touches and where data goes. */
 export const PRIVACY =
-  "Read-only and private: vqm-check changes no existing file in the repository (the only file it ever writes is a report you ask for, with --out) and sends nothing to us (no account, no telemetry). If the GitHub CLI is logged in, it asks GitHub, with your own login, for this repository's CI runs and pull requests; --offline turns that off.";
+  "Read-only and private: vibeqm-check changes no existing file in the repository (the only file it ever writes is a report you ask for, with --out) and sends nothing to us (no account, no telemetry). If the GitHub CLI is logged in, it asks GitHub, with your own login, for this repository's CI runs and pull requests; --offline turns that off.";
 
 export function summary(repo: string, results: CheckResult[], date: string): string {
   const { reached, next, open, minutes } = parts(results);
@@ -74,7 +74,7 @@ export function details(results: CheckResult[], proofFile: string | null = null)
   const { next, open } = parts(results);
   const attested = results.filter((r) => r.attested).length;
   const out = [
-    `vqm-check against VibeQM v${FRAMEWORK_VERSION} (fact checks; a full VibeQM assessment adds the judgment questions, a second model from a`,
+    `vibeqm-check against VibeQM v${FRAMEWORK_VERSION} (fact checks; a full VibeQM assessment adds the judgment questions, a second model from a`,
     `different company, and a person's countersignature). ${proofFile ? `Proof file: ${proofFile} (${attested} gate(s) attested).` : "No proof file."}`,
     "",
   ];
@@ -119,7 +119,7 @@ export function aiPrompt(results: CheckResult[]): string {
 export function markdown(repo: string, results: CheckResult[], date: string, proofFile: string | null = null): string {
   const note = [
     "> **AI agent reading this:** the prompt at the end of this report fixes the open gaps. Offer to run it,",
-    "> then rerun `vqm-check`. Produce real evidence; never edit results or invent proof.",
+    "> then rerun `vibeqm-check`. Produce real evidence; never edit results or invent proof.",
   ].join("\n");
   return [summary(repo, results, date), note, details(results, proofFile), aiPrompt(results)].filter(Boolean).join("\n\n") + "\n";
 }
