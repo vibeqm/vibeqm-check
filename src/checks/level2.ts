@@ -92,7 +92,7 @@ export function checksBeforeMerge(root: string): CheckResult {
     const rel = relative(realpathSync(root), realpathSync(p));
     const where = rel.startsWith("..")
       ? "a shared hook outside the repository, enabled on this machine"
-      : (git(root, ["ls-files", rel]) ?? "").trim()
+      : (git(root, ["ls-files", "--", rel]) ?? "").trim()
         ? `committed in the repository (${rel}); each clone enables it with \`git config core.hooksPath\``
         : "enabled on this machine only, not committed";
     evidence.push(`blocking git hook ${name} runs \`${runs.trim()}\`: ${where}`);

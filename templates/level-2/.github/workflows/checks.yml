@@ -12,12 +12,12 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       # Your build, tests, linter and static analysis. Uncomment the lines for your
       # stack, or write your own. Until one runs, this job checks nothing.
       #
       # Node:
-      # - uses: actions/setup-node@v4
+      # - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       #   with: { node-version: 22 }
       # - run: npm ci && npm run lint && npm test
       # - run: npm audit --audit-level=critical
@@ -28,13 +28,13 @@ jobs:
       # - run: pipx run pip-audit -r requirements.txt
       #
       # Go:
-      # - uses: actions/setup-go@v5
+      # - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
       # - run: go vet ./... && go test ./...
   security:
     # Secret scanning over the whole history, and static security analysis.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
       - name: gitleaks 8.30.1, checksum-verified (secret scanning)
