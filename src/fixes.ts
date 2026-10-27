@@ -384,6 +384,25 @@ const FIXES: Record<string, Maker> = {
     verify: RERUN,
     minutes: 30,
   }),
+  "Reviewer proven": () => ({
+    why: "An AI peer reviewer that has never been seen catching a fault is not yet a peer review.",
+    steps: [
+      "Plant at least five known-bad changes on a branch (a person or the harness plants them, never the agent under review): across standard and high risk, including a weakened test and a prompt-injection case.",
+      "Run the AI peer reviewer on each; it must flag every one. Keep the record where the agent's session can't edit it (CI output or a signed commit), and re-run the set when the reviewer's model or version changes.",
+      "Record it in `vqm-proof.json` (gate \"Reviewer proven\").",
+    ],
+    verify: RERUN,
+    minutes: 60,
+  }),
+  "Service-bound items (applicability)": () => ({
+    why: "A library, a tool or a static site has no production service; each service-bound item needs a stated equivalent or a reason it doesn't apply.",
+    steps: [
+      "For three environments, V&V per release, runbooks, monitoring, incident response, backups and service-level objectives, write the equivalent this product uses (production = the published release, staging = a pre-release channel) or the reason it doesn't apply, in `VibeQM/tailoring/TAILORING.md`.",
+      "An equivalent must be as strict as the item it replaces. Record the tailoring in `vqm-proof.json` (gate \"Service-bound items (applicability)\").",
+    ],
+    verify: RERUN,
+    minutes: 30,
+  }),
 };
 
 export function fixFor(r: CheckResult): Fix | null {

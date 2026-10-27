@@ -10,6 +10,21 @@ process.env.VQM_OFFLINE = "1"; // the tests never ask a code host
 
 const wide = { width: 100, color: false };
 
+test("once Level 2 is met, the result leads with the progress profile and says what the tool covers", () => {
+  const results: CheckResult[] = [
+    { level: 2, gate: "Agent rules file", status: "met", evidence: "AGENTS.md" },
+    { level: 3, gate: "Models pinned", status: "not-met", evidence: "No models named." },
+    { level: 3, gate: "Lessons recorded", status: "not-visible", evidence: "attach proof" },
+    { level: 3, gate: "Data boundary", status: "met", evidence: "VibeQM/DATA_BOUNDARY.md" },
+  ];
+  const out = terminalSummary("/home/someone/shop", results, "2026-10-27", wide);
+  assert.equal(out.split("\n")[3], "You are on Level 2, Guarded; Level 3: 2 of 3 items open.");
+  assert.match(out, /Levels 4 and 5 are not checked/);
+  // A Level 1 result carries no profile: the next level's items are the message.
+  const low = terminalSummary("/home/someone/shop", [{ level: 2, gate: "Agent rules file", status: "not-met", evidence: "none" }], "2026-10-27", wide);
+  assert.equal(low.split("\n")[3], "You are on Level 1, Unguided.");
+});
+
 test("screen one leads with the answer: level, gap, minutes", () => {
   const results: CheckResult[] = [
     { level: 2, gate: "Agent rules file", status: "not-met", evidence: "No rules file found." },

@@ -187,4 +187,6 @@ export const level3 = [
   notVisible("Agent plug-ins and tools", "outside plug-ins, tool servers and skills must be pinned and added as high-risk changes; attach proof"),
   notVisible("Parallel agents and rollback", "agents on separate branches through the same checks, and a tried rollback; attach proof"),
   notVisible("Generated-code licensing", "a license check on new code; attach proof"),
+  notVisible("Reviewer proven", "the AI peer reviewer's model and version need a record of catching a planted-fault set (at least five known-bad changes, including a weakened test and a prompt-injection case), kept where the agent can't edit it; attach proof"),
+  notVisible("Service-bound items (applicability)", "a product with no live production service states an equivalent or a not-applicable reason for each service-bound item, recorded as tailoring; attach proof"),
 ];

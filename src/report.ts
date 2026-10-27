@@ -46,6 +46,10 @@ function parts(results: CheckResult[]): Parts {
 
 /** The answer first: the level, and what the next one takes, in a few sentences. */
 /** Said on every report: what the tool touches and where data goes. */
+/** What the fact checks cover, said with every result so a level is not read as more than it is. */
+export const COVERAGE =
+  "This tool runs the fact checks of every Level 2 gate and lists every Level 3 gate, checking about half of them from the repository (the rest need proof a person attaches); Levels 4 and 5 are not checked. The judgment questions, a second model and a countersignature are the rest of an assessment.";
+
 export const PRIVACY =
   "Read-only and private: vibeqm-check changes no existing file in the repository (the only file it ever writes is a report you ask for, with --out) and sends nothing to us (no account, no telemetry). If the GitHub CLI is logged in, it asks GitHub, with your own login, for this repository's CI runs and pull requests; --offline turns that off.";
 
@@ -54,7 +58,8 @@ export function summary(repo: string, results: CheckResult[], date: string): str
   const now = LEVELS[reached];
   // The folder name, not the absolute path: a saved or shared report shouldn't carry
   // the person's account name (the terminal screen does the same).
-  const out = [`# VibeQM self-assessment: ${basename(repo) || repo}, ${date}`, "", `_${PRIVACY}_`, "", `**You are on Level ${reached}, ${now.name}.**`];
+  const profile = reached >= 2 && open.length ? `; Level ${next}: ${open.length} of ${results.filter((r) => r.level === next).length} items open` : "";
+  const out = [`# VibeQM self-assessment: ${basename(repo) || repo}, ${date}`, "", `_${PRIVACY}_`, "", `**You are on Level ${reached}, ${now.name}${profile}.**`];
   if (open.length) {
     const n = open.length;
     out.push(
@@ -66,6 +71,7 @@ export function summary(repo: string, results: CheckResult[], date: string): str
   } else {
     out.push(`This version of the tool checks up to Level ${reached}; Levels above need measurements over time.`);
   }
+  out.push("", `_${COVERAGE}_`);
   return out.join("\n");
 }
 

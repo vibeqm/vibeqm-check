@@ -3,7 +3,7 @@
 // for the next level. Agents, pipes and CI get the Markdown report instead (report.ts).
 import { fixOrder } from "./fixes.js";
 import { basename } from "node:path";
-import { levelReached, PRIVACY, showPath } from "./report.js";
+import { COVERAGE, levelReached, PRIVACY, showPath } from "./report.js";
 import { FRAMEWORK_VERSION, type CheckResult } from "./types.js";
 
 export interface Style {
@@ -89,7 +89,9 @@ export function terminalSummary(repo: string, results: CheckResult[], date: stri
   out.push(p.bold(`VibeQM self-assessment: ${name}, ${date}`));
   out.push(p.dim("Read-only and private · no account, no telemetry · the full note is at the end of the report"));
   out.push("");
-  out.push(p.bold(`You are on Level ${reached}, ${LEVEL_NAMES[reached] ?? ""}.`));
+  // The progress profile (VQM_SPEC §13): once Level 2 is met, the result leads with
+  // how far the next level is, since most teams spend a long time inside Level 3.
+  out.push(p.bold(`You are on Level ${reached}, ${LEVEL_NAMES[reached] ?? ""}${reached >= 2 && open.length ? `; Level ${next}: ${open.length} of ${at.length} items open` : ""}.`));
   if (open.length) {
     out.push(
       ...wrap(
@@ -104,6 +106,7 @@ export function terminalSummary(repo: string, results: CheckResult[], date: stri
   } else {
     out.push(`This version of the tool checks up to Level ${reached}; Levels above need measurements over time.`);
   }
+  out.push(p.dim(COVERAGE));
   out.push("", scorecard(results, style));
   return out.join("\n");
 }
