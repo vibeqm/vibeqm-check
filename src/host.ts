@@ -58,6 +58,36 @@ export function mergedPullRequests(root: string): MergedPr[] | null {
   return once(`prs:${root}`, () => gh<MergedPr[]>(root, ["pr", "list", "--state", "merged", "--limit", "100", "--json", "number,mergedAt,author,reviews,commits"]));
 }
 
+export interface BranchRules {
+  branch: string;
+  pullRequest: boolean; // a pull request is required before merging
+  requiredChecks: string[]; // status checks that must pass before merging
+}
+
+/** The rules that protect the default branch, read from the host's rulesets and
+ * classic branch protection (whichever the login can see); null when unreadable.
+ * Rulesets are readable with read access; classic protection needs admin, so a
+ * null here never means "unprotected", only "not visible from here". */
+export function branchRules(root: string): BranchRules | null {
+  return once(`rules:${root}`, () => {
+    const repo = gh<{ defaultBranchRef: { name: string } }>(root, ["repo", "view", "--json", "defaultBranchRef"]);
+    const branch = repo?.defaultBranchRef?.name;
+    if (!branch) return null;
+    type Rule = { type: string; parameters?: { required_status_checks?: { context: string }[] } };
+    const rules = gh<Rule[]>(root, ["api", `repos/{owner}/{repo}/rules/branches/${encodeURIComponent(branch)}`]);
+    let pullRequest = (rules ?? []).some((x) => x.type === "pull_request");
+    let requiredChecks = (rules ?? []).flatMap((x) => (x.type === "required_status_checks" ? (x.parameters?.required_status_checks ?? []).map((c) => c.context) : []));
+    if (!pullRequest && !requiredChecks.length) {
+      type Protection = { required_pull_request_reviews?: unknown; required_status_checks?: { contexts?: string[]; checks?: { context: string }[] } };
+      const classic = gh<Protection>(root, ["api", `repos/{owner}/{repo}/branches/${encodeURIComponent(branch)}/protection`]);
+      if (!classic && !rules) return null;
+      pullRequest = !!classic?.required_pull_request_reviews;
+      requiredChecks = classic?.required_status_checks?.checks?.map((c) => c.context) ?? classic?.required_status_checks?.contexts ?? [];
+    }
+    return { branch, pullRequest, requiredChecks };
+  });
+}
+
 /** Tag names on the host, to tell pushed releases from local-only tags; null when unreadable. */
 export function hostTags(root: string): string[] | null {
   return once(`tags:${root}`, () => gh<{ name: string }[]>(root, ["api", "repos/{owner}/{repo}/tags", "--paginate"])?.map((t) => t.name) ?? null);

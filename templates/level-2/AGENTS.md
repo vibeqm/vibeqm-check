@@ -12,6 +12,8 @@ Copilot all read AGENTS.md. -->
 - Tests, linter, static analysis: <command>
 - Security checks: <command>
 - A task is done only when <command> passes.
+- A blocking pre-commit hook (.githooks/pre-commit) runs the checks; enable it once
+  per clone with `git config core.hooksPath .githooks`.
 
 ## Where things are
 - Code: <folder>. Tests: <folder>.

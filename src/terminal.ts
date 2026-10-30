@@ -1,9 +1,9 @@
 // A scan laid out for a person at a terminal, in two screens: first the answer
-// (the summary and a scorecard per level), then on request a numbered to-do list
+// (the lead and a scorecard per level), then on request a numbered to-do list
 // for the next level. Agents, pipes and CI get the Markdown report instead (report.ts).
-import { fixOrder } from "./fixes.js";
+import { NEEDS_LABEL } from "./fixes.js";
 import { basename } from "node:path";
-import { COVERAGE, levelReached, PRIVACY, showPath } from "./report.js";
+import { claim, COVERAGE, lead, levelReached, parts, PRIVACY, showPath } from "./report.js";
 import { FRAMEWORK_VERSION, type CheckResult } from "./types.js";
 
 export interface Style {
@@ -69,44 +69,27 @@ function briefEvidence(r: CheckResult, max: number): string {
 
 const widthOf = (style: Style) => Math.max(40, Math.min(style.width, 110));
 const markOf = (p: ReturnType<typeof paint>) => (r: CheckResult) =>
-  r.status === "met" ? p.green("✓") : r.status === "not-met" ? p.red("✗") : p.yellow("○");
+  r.status === "met" ? p.green("✓") : r.status === "not-met" ? p.red("✗") : r.status === "in-place" ? p.cyan("◐") : p.yellow("○");
 
-/** Screen one: the answer first — level, gap, minutes — then the scorecard. The full
- * privacy note stays in the footer (terminalDetails), so screen one spends its lines
- * on the user's own results; the one dim line keeps the promise visible up front. */
+export const CTA_TERMINAL = 'Start: in Claude Code, Codex or another agent, say "run vibeqm-check and do what it says, asking me before each change". Or press Enter for the list and the prompt to paste.';
+
+/** Screen one: the answer first — how far the next level is, who does what, what it
+ * earns — then the scorecard. The full privacy note stays in the footer (terminalDetails),
+ * so screen one spends its lines on the person's own results; the one dim line keeps the
+ * promise visible up front. */
 export function terminalSummary(repo: string, results: CheckResult[], date: string, style: Style): string {
   const p = paint(style);
   const width = widthOf(style);
-  const reached = levelReached(results);
-  const next = reached + 1;
-  const at = results.filter((r) => r.level === next);
-  const met = at.filter((r) => r.status === "met").length;
-  const open = fixOrder(at.filter((r) => r.status !== "met"));
-  const minutes = open.reduce((n, x) => n + x.f.minutes, 0);
   const name = basename(repo) || repo;
   const out: string[] = [];
 
   out.push(p.bold(`VibeQM self-assessment: ${name}, ${date}`));
   out.push(p.dim("Read-only and private · no account, no telemetry · the full note is at the end of the report"));
   out.push("");
-  // The progress profile (VQM_SPEC §13): once Level 2 is met, the result leads with
-  // how far the next level is, since most teams spend a long time inside Level 3.
-  out.push(p.bold(`You are on Level ${reached}, ${LEVEL_NAMES[reached] ?? ""}${reached >= 2 && open.length ? `; Level ${next}: ${open.length} of ${at.length} items open` : ""}.`));
-  if (open.length) {
-    out.push(
-      ...wrap(
-        `${met} of the ${at.length} Level ${next} items met — ${open.length} more, about ${minutes} minutes, to reach Level ${next}, ${LEVEL_NAMES[next] ?? ""}. Most of it an AI coding agent can do.`,
-        width,
-        "",
-        "",
-      ),
-    );
-  } else if (at.length) {
-    out.push(`Every Level ${next} check this tool runs is met.`);
-  } else {
-    out.push(`This version of the tool checks up to Level ${reached}; Levels above need measurements over time.`);
-  }
-  out.push(p.dim(COVERAGE));
+  const { headline, lines } = lead(results, CTA_TERMINAL);
+  out.push(...wrap(headline, width, "", "").map((l) => p.bold(l)));
+  for (const line of lines) out.push(...wrap(plain(line, p), width, "", ""));
+  out.push(p.dim(`Claim: ${claim(results, date)}.`));
   out.push("", scorecard(results, style));
   return out.join("\n");
 }
@@ -145,7 +128,12 @@ function scorecard(results: CheckResult[], style: Style): string {
   }
   out.push(
     p.dim(
-      `${p.green("✓")} met   ${p.red("✗")} not met   ${p.yellow("○")} not visible: counts as not met until a person attaches proof   attested · = met by a person's proof`,
+      wrap(
+        `${p.green("✓")} met   ${p.red("✗")} not met   ${p.cyan("◐")} in place: set up, counts with use   ${p.yellow("○")} not visible: counts as not met until a person attaches proof   attested · = met by a person's proof`,
+        width,
+        "",
+        "",
+      ).join("\n"),
     ),
   );
   return out.join("\n");
@@ -155,20 +143,18 @@ function scorecard(results: CheckResult[], style: Style): string {
 export function terminalDetails(results: CheckResult[], proofFile: string | null, style: Style): string {
   const p = paint(style);
   const width = widthOf(style);
-  const next = levelReached(results) + 1;
+  const { next, open, minutes } = parts(results);
   const mark = markOf(p);
   const word = (r: CheckResult) =>
-    r.status === "met" ? (r.attested ? "met, attested" : "met") : r.status === "not-met" ? "not met" : "not visible";
+    r.status === "met" ? (r.attested ? "met, attested" : "met") : r.status === "not-met" ? "not met" : r.status === "in-place" ? "in place" : "not visible";
   const out: string[] = [];
 
   // The to-do list for the next level, cheapest first (the AI prompt's order).
-  const open = fixOrder(results.filter((r) => r.level === next && r.status !== "met"));
   if (open.length) {
-    const minutes = open.reduce((n, x) => n + x.f.minutes, 0);
     out.push(p.bold(`TO REACH LEVEL ${next}: ${open.length} item${open.length === 1 ? "" : "s"}, about ${minutes} minutes`), "");
     open.forEach(({ r, f }, i) => {
       const n = `${i + 1}.`.padEnd(4);
-      out.push(`${n}${mark(r)} ${p.bold(r.gate)}  ${p.dim(`${word(r)}${` · ~${f.minutes} min`}`)}`);
+      out.push(`${n}${mark(r)} ${p.bold(r.gate)}  ${p.dim(`${word(r)} · ~${f.minutes} min · ${NEEDS_LABEL[f.needs]}`)}`);
       const pad = "      ";
       out.push(...wrap(plain(showPath(r.evidence), p), width, `${pad}${p.dim("Found:")} `, `${pad}       `));
       out.push(...wrap(plain(f.why, p), width, `${pad}${p.dim("Why:")}   `, `${pad}       `));
@@ -182,7 +168,7 @@ export function terminalDetails(results: CheckResult[], proofFile: string | null
   out.push(
     p.dim(
       wrap(
-        `Fact checks against VibeQM v${FRAMEWORK_VERSION}. A formal VibeQM assessment adds judgment by two AI models from different companies and a person's countersignature. ${proofFile ? `Proof: ${proofFile}.` : "No proof file."} ${PRIVACY}`,
+        `Fact checks against VibeQM v${FRAMEWORK_VERSION}. A formal VibeQM assessment adds judgment by two AI models from different companies and a person's countersignature. ${proofFile ? `Proof: ${showPath(proofFile)}.` : "No proof file."} ${COVERAGE} ${PRIVACY}`,
         width,
         "",
         "",

@@ -96,9 +96,11 @@ export function applyProofs(results: CheckResult[], proofs: Proof[], source: str
     return bad.length ? ` (warning: ${bad.join(", ")} named in this proof ${bad.length === 1 ? "is not a commit" : "are not commits"} in this repository)` : "";
   };
   return results.map((r) => {
-    if (r.status !== "not-visible") return r;
+    if (r.status !== "not-visible" && r.status !== "in-place") return r;
     const p = proofs.find((x) => x.gate.toLowerCase() === r.gate.toLowerCase());
     if (!p) return r;
+    // An in-place gate is waiting for use; a person can attest the earlier history
+    // the tool does not claim (review done elsewhere before the record began).
     const age = ageDays(p.date, today);
     if (!(age >= 0) || age > MAX_AGE_DAYS) {
       return { ...r, evidence: `${r.evidence}. Proof in ${source} dated ${p.date} is expired or invalid` };

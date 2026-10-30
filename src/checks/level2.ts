@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { commitSizes, git, median } from "../git.js";
-import { defaultBranchRuns, mergedPullRequests } from "../host.js";
+import { branchRules, defaultBranchRuns, mergedPullRequests } from "../host.js";
 import { blanksNote, CHECK_COMMANDS, code, committedSettings, delegated, placeholders, RULES_FILES } from "./basics.js";
 import type { CheckResult } from "../types.js";
 
@@ -35,6 +35,43 @@ export function agentRulesFile(root: string): CheckResult {
   return { level: 2, gate, status: "met", evidence: [...lines, ...blanks].join("; ") };
 }
 
+/** The accepted equivalent of pull requests for a one-person repository (VQM_SPEC §6,
+ * DEC-147): a committed blocking hook, the bypass denied in committed agent settings,
+ * and a tailoring row that records it. Each part is named, so the evidence says what
+ * is missing when it is not met. */
+function soloEquivalent(root: string): { solo: boolean; have: string[]; missing: string[] } {
+  const authors = new Set((git(root, ["log", `-${SAMPLE}`, "--format=%ae"]) ?? "").split("\n").filter(Boolean));
+  const solo = authors.size === 1;
+  const have: string[] = [];
+  const missing: string[] = [];
+  const hook = blockingHooks(root).find((h) => h.committed);
+  if (hook) have.push(`the committed blocking ${hook.name} hook (${hook.rel})`);
+  else missing.push("a committed blocking pre-commit or pre-push hook (see Checks before merge)");
+  const denied = committedSettings(root).find(({ committed, text }) => {
+    if (!committed) return false;
+    try {
+      return (JSON.parse(text ?? "")?.permissions?.deny ?? []).some((d: unknown) => typeof d === "string" && /--no-verify|-n /.test(d));
+    } catch {
+      return false;
+    }
+  });
+  if (denied) have.push(`\`--no-verify\` denied in ${denied.file}`);
+  else missing.push("a deny rule on `git commit --no-verify` in .claude/settings.json, committed");
+  const tailoring = (git(root, ["ls-files", "--", "VibeQM/tailoring/", "tailoring/"]) ?? "")
+    .split("\n")
+    .filter((f) => /\.md$/i.test(f))
+    .map((f) => {
+      const row = readFileSync(join(root, f), "utf8")
+        .split("\n")
+        .find((l) => /^\|\s*TLR-\d+/.test(l) && /pull request|merge path|branch protection/i.test(l) && !placeholders(l).length);
+      return row ? `${f} (${row.match(/TLR-\d+/)?.[0]})` : null;
+    })
+    .find(Boolean);
+  if (tailoring) have.push(`recorded as tailoring in ${tailoring}`);
+  else missing.push("a tailoring row (VibeQM/tailoring/TAILORING.md) saying the hook stands in for pull requests, approved by the owner");
+  return { solo, have, missing };
+}
+
 export function versionControl(root: string): CheckResult {
   const gate = "Version control + merge path";
   if (git(root, ["rev-parse", "--git-dir"]) === null) {
@@ -48,12 +85,28 @@ export function versionControl(root: string): CheckResult {
   if (prs?.length) {
     return { level: 2, gate, status: "met", evidence: `${prs.length} pull requests merged on the host (e.g. #${prs[0].number}, ${prs[0].mergedAt.slice(0, 10)})` };
   }
+  const rules = branchRules(root);
+  if (rules?.pullRequest) {
+    return { level: 2, gate, status: "met", evidence: `the host requires a pull request before merging into ${rules.branch} (read from the host with your login)` };
+  }
+  const { solo, have, missing } = soloEquivalent(root);
+  if (solo && !missing.length) {
+    return { level: 2, gate, status: "met", evidence: `one author in the sample; changes reach the main branch behind ${have.join(", ")}: the accepted equivalent of pull requests for a one-person repository` };
+  }
+  if (solo) {
+    return {
+      level: 2,
+      gate,
+      status: "not-visible",
+      evidence: `git repository with one author and no merge commits. For one person, the accepted equivalent of pull requests needs ${missing.join("; ")}${have.length ? ` (already there: ${have.join(", ")})` : ""}. Or branch protection on the host, which this tool reads when the GitHub CLI is logged in`,
+    };
+  }
   return {
     level: 2,
     gate,
     status: "not-visible",
     evidence:
-      "git repository, but no merge commits in the sample. Branch protection is set on the host (e.g. GitHub) and can't be read locally; a tailoring record may let a blocking pre-commit gate stand in for pull requests",
+      "git repository, but no merge commits in the sample. Branch protection is set on the host (e.g. GitHub); this tool reads it when the GitHub CLI is logged in, otherwise attach proof",
   };
 }
 
@@ -62,6 +115,41 @@ function hooksDir(root: string): string | null {
   if (configured) return configured.startsWith("/") ? configured : join(root, configured);
   const gitDir = git(root, ["rev-parse", "--absolute-git-dir"])?.trim();
   return gitDir ? join(gitDir, "hooks") : null;
+}
+
+interface Hook {
+  name: string;
+  runs: string;
+  rel: string;
+  committed: boolean;
+  where: string;
+}
+
+/** The executable pre-commit and pre-push hooks that run a test, lint or analyze
+ * command (themselves or through the Makefile or a repository script they call);
+ * `exit 0` is not a gate. `idle` names hooks that run nothing recognisable. */
+function blockingHooks(root: string, idle: string[] = []): Hook[] {
+  const hooks = hooksDir(root);
+  const found: Hook[] = [];
+  for (const name of ["pre-commit", "pre-push"]) {
+    const p = hooks ? join(hooks, name) : null;
+    if (!p || !existsSync(p) || !(statSync(p).mode & 0o111)) continue;
+    const text = readFileSync(p, "utf8");
+    const runs = code(text + "\n" + delegated(root, text)).match(CHECK_COMMANDS)?.[0];
+    if (!runs) {
+      idle.push(name);
+      continue;
+    }
+    const rel = relative(realpathSync(root), realpathSync(p));
+    const committed = !rel.startsWith("..") && !!(git(root, ["ls-files", "--", rel]) ?? "").trim();
+    const where = rel.startsWith("..")
+      ? "a shared hook outside the repository, enabled on this machine"
+      : committed
+        ? `committed in the repository (${rel}); each clone enables it with \`git config core.hooksPath\``
+        : "enabled on this machine only, not committed";
+    found.push({ name, runs: runs.trim(), rel, committed, where });
+  }
+  return found;
 }
 
 export function checksBeforeMerge(root: string): CheckResult {
@@ -75,41 +163,34 @@ export function checksBeforeMerge(root: string): CheckResult {
   for (const f of [".gitlab-ci.yml", ".circleci/config.yml", "azure-pipelines.yml"]) {
     if (existsSync(join(root, f))) evidence.push(`CI config: ${f}`);
   }
-  // A hook counts when it runs a test, lint or analyze command (itself or through
-  // the Makefile or a repository script it calls); `exit 0` is not a gate.
   // core.hooksPath is per-clone config, so say where the hook lives.
-  const hooks = hooksDir(root);
   const idle: string[] = [];
-  for (const name of ["pre-commit", "pre-push"]) {
-    const p = hooks ? join(hooks, name) : null;
-    if (!p || !existsSync(p) || !(statSync(p).mode & 0o111)) continue;
-    const text = readFileSync(p, "utf8");
-    const runs = code(text + "\n" + delegated(root, text)).match(CHECK_COMMANDS)?.[0];
-    if (!runs) {
-      idle.push(name);
-      continue;
-    }
-    const rel = relative(realpathSync(root), realpathSync(p));
-    const where = rel.startsWith("..")
-      ? "a shared hook outside the repository, enabled on this machine"
-      : (git(root, ["ls-files", "--", rel]) ?? "").trim()
-        ? `committed in the repository (${rel}); each clone enables it with \`git config core.hooksPath\``
-        : "enabled on this machine only, not committed";
-    evidence.push(`blocking git hook ${name} runs \`${runs.trim()}\`: ${where}`);
-  }
+  for (const h of blockingHooks(root, idle)) evidence.push(`blocking git hook ${h.name} runs \`${h.runs}\`: ${h.where}`);
+  // A committed hook that this clone has not enabled (core.hooksPath unset) blocks
+  // nothing yet; say so, since enabling it is one command.
+  const dormant = ["pre-commit", "pre-push"]
+    .map((n) => `.githooks/${n}`)
+    .filter((f) => (git(root, ["ls-files", "--", f]) ?? "").trim() && existsSync(join(root, f)) && code(readFileSync(join(root, f), "utf8")).match(CHECK_COMMANDS));
+  const enabled = git(root, ["config", "core.hooksPath"])?.trim();
+  const notEnabled = dormant.length && !enabled ? `; ${dormant.join(" and ")} is committed but not enabled on this clone: run \`git config core.hooksPath .githooks\`` : "";
   if (idle.length && !evidence.length) {
-    return { level: 2, gate, status: "not-met", evidence: `${idle.join(" and ")} hook found, but it runs no test, lint or analyze command this tool recognises` };
+    return { level: 2, gate, status: "not-met", evidence: `${idle.join(" and ")} hook found, but it runs no test, lint or analyze command this tool recognises${notEnabled}` };
   }
   if (!evidence.length) {
-    return { level: 2, gate, status: "not-met", evidence: "no CI configuration and no executable pre-commit/pre-push hook" };
+    return { level: 2, gate, status: "not-met", evidence: `no CI configuration and no executable pre-commit/pre-push hook${notEnabled}` };
   }
-  // CI that runs is not the same as CI that blocks: required status checks live on the host.
+  // CI that runs is not the same as CI that blocks: required status checks live on the
+  // host, read here when the GitHub CLI is logged in.
   const onlyCi = !evidence.some((e) => e.startsWith("blocking git hook"));
+  const required = onlyCi ? branchRules(root)?.requiredChecks ?? [] : [];
+  if (onlyCi && required.length) {
+    return { level: 2, gate, status: "met", evidence: `${evidence.join("; ")}; the host requires ${required.slice(0, 3).join(", ")}${required.length > 3 ? "…" : ""} to pass before merging (read from the host with your login)` };
+  }
   return {
     level: 2,
     gate,
     status: onlyCi ? "not-visible" : "met",
-    evidence: evidence.join("; ") + (onlyCi ? ". Whether failing CI blocks the merge is a host setting; attach proof" : ""),
+    evidence: evidence.join("; ") + (onlyCi ? `. Whether failing CI blocks the merge is a host setting: this tool reads it when the GitHub CLI is logged in; otherwise a committed blocking hook makes it visible, or attach proof${notEnabled}` : ""),
   };
 }
 

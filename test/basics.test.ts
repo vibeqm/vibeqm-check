@@ -142,8 +142,9 @@ test("peer review: same-company models and unknown names that are not a person d
 
 test("peer review: measured from adoption; needs 20 changes, then every one reviewed", () => {
   const few = peerReview(reviewedRepo([{}, GLM, GLM]));
-  assert.equal(few.status, "not-visible");
-  assert.match(few.evidence, /since review began \([0-9a-f]+, [0-9-]+\), 2 of 2 pushed commits were covered by a review; 20 changes since adoption are needed/);
+  assert.equal(few.status, "in-place");
+  assert.match(few.evidence, /since review began \([0-9a-f]+, [0-9-]+\), 2 of 2 pushed commits were covered by a review; counts after 20 reviewed changes since adoption, 2 so far/);
+  assert.deepEqual(few.progress, { done: 2, needed: 20, unit: "reviewed pushed changes" });
   const enough = peerReview(reviewedRepo([{}, ...Array(20).fill({ trailer: "Reviewed-by: A. Person <a@example.com>", record: true })]));
   assert.equal(enough.status, "met");
   const gap = peerReview(reviewedRepo([GLM, {}, GLM]));

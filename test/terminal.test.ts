@@ -10,7 +10,7 @@ process.env.VQM_OFFLINE = "1"; // the tests never ask a code host
 
 const wide = { width: 100, color: false };
 
-test("once Level 2 is met, the result leads with the progress profile and says what the tool covers", () => {
+test("the lead says how far the next level is, who does what, and what it earns; the claim carries the profile at every level", () => {
   const results: CheckResult[] = [
     { level: 2, gate: "Agent rules file", status: "met", evidence: "AGENTS.md" },
     { level: 3, gate: "Models pinned", status: "not-met", evidence: "No models named." },
@@ -18,11 +18,48 @@ test("once Level 2 is met, the result leads with the progress profile and says w
     { level: 3, gate: "Data boundary", status: "met", evidence: "VibeQM/DATA_BOUNDARY.md" },
   ];
   const out = terminalSummary("/home/someone/shop", results, "2026-10-27", wide);
-  assert.equal(out.split("\n")[3], "You are on Level 2, Guarded; Level 3: 2 of 3 items open.");
-  assert.match(out, /Levels 4 and 5 are not checked/);
-  // A Level 1 result carries no profile: the next level's items are the message.
+  assert.equal(out.split("\n")[3], "Nearly there: Level 3, Standardized, is 2 items away.");
+  assert.match(out, /Already met, 1 of 3: Data boundary\./);
+  assert.match(out, /Your AI agent can do all of them now \(about 25 minutes\)\./);
+  assert.match(out.replace(/\n/g, " "), /Today's level: 2, Guarded\. Level 3 earns: the AI takes a task from an issue to a finished pull request/);
+  assert.match(out, /Claim: VibeQM v[\d.]+ self-assessed: Level 2, 2026-10-27, vibeqm-check \(fact checks only\); Level 3: 2 of 3 items open\./);
+  // The coverage note lives in the footer now, not on screen one.
+  assert.ok(!out.includes("Levels 4 and 5 are not checked"));
+  // Level 1 gets the same lead: the profile is for everyone, not only once Level 2 is met.
   const low = terminalSummary("/home/someone/shop", [{ level: 2, gate: "Agent rules file", status: "not-met", evidence: "none" }], "2026-10-27", wide);
-  assert.equal(low.split("\n")[3], "You are on Level 1, Unguided.");
+  assert.equal(low.split("\n")[3], "Nearly there: Level 2, Guarded, is 1 item away.");
+  assert.match(low, /Claim: .*Level 1, 2026-10-27, .*; Level 2: 1 of 1 items open\./);
+});
+
+test("a gate in place counts with use: the lead gives the countdown, the scorecard its own mark", () => {
+  const results: CheckResult[] = [
+    { level: 2, gate: "Agent rules file", status: "met", evidence: "AGENTS.md" },
+    { level: 2, gate: "Peer review on every change", status: "in-place", evidence: "since review began (abc1234, 2026-10-20), 3 of 3 pushed commits were covered by a review; counts after 20 reviewed changes since adoption, 3 so far", progress: { done: 3, needed: 20, unit: "reviewed pushed changes" } },
+  ];
+  const out = terminalSummary("/shop", results, "2026-10-30", wide);
+  assert.match(out.replace(/\n/g, " "), /Level 2 is in place: 1 of 2 met, and peer review on every change counts after 20 reviewed pushed changes \(3 so far\)\./);
+  assert.match(out, /◐ Peer review on every change/);
+  assert.match(out, /◐ in place: set up, counts with use/);
+  const two = terminalDetails(results, null, wide);
+  assert.match(two, /in place · ~30 min · counts with use/);
+  // With one more gate open, the countdown follows the split.
+  const mixed = terminalSummary("/shop", [...results, { level: 2, gate: "Small batches", status: "not-met", evidence: "median 900" }], "2026-10-30", wide);
+  assert.match(mixed.replace(/\n/g, " "), /Level 2, Guarded, is 1 item away, plus 1 gate that counts with use\./);
+  assert.match(mixed.replace(/\n/g, " "), /1 counts with use \(small batches\)\. Then peer review on every change counts after 20/);
+});
+
+test("when every fact check of the next level is met, the screen says what puts the level on the scorecard", () => {
+  const results: CheckResult[] = [
+    { level: 2, gate: "Agent rules file", status: "met", evidence: "AGENTS.md" },
+    { level: 3, gate: "Models pinned", status: "met", evidence: "settings" },
+    { level: 3, gate: "Lessons recorded", status: "met", evidence: "LESSONS.md" },
+  ];
+  // Level 3 reached and nothing above it checked: the tool says so.
+  const out = terminalSummary("/shop", results, "2026-10-30", wide);
+  assert.match(out, /You are on Level 3, Standardized\./);
+  // Level 2 met in full with Level 3 gates open: the lead is the distance to Level 3, not a verdict.
+  const l2 = terminalSummary("/shop", [results[0], { level: 3, gate: "Models pinned", status: "not-met", evidence: "none" }], "2026-10-30", wide);
+  assert.match(l2, /Level 3, Standardized, is 1 item away\./);
 });
 
 test("screen one leads with the answer: level, gap, minutes", () => {
@@ -35,9 +72,10 @@ test("screen one leads with the answer: level, gap, minutes", () => {
   const lines = out.split("\n");
   assert.equal(lines[0], "VibeQM self-assessment: shop, 2026-10-13");
   assert.match(lines[1], /Read-only and private/);
-  assert.equal(lines[3], "You are on Level 1, Unguided.");
-  // 10 + 5 minutes for the two open gates, ordered cheapest first.
-  assert.match(out, /0 of the 2 Level 2 items met — 2 more, about 15 minutes, to reach Level 2, Guarded\./);
+  assert.equal(lines[3], "Nearly there: Level 2, Guarded, is 2 items away.");
+  // 10 + 5 minutes for the two open gates, both the agent's.
+  assert.match(out, /Your AI agent can do all of them now \(about 15 minutes\)\./);
+  assert.match(out, /Start: in Claude Code, Codex or another agent, say "run vibeqm-check and do what it says/);
   assert.match(out, /Level 2 · Guarded\s+□□\s+0 of 2 met/);
   // Levels beyond the next one show only their bar.
   assert.match(out, /Level 3 · Standardized/);

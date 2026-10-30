@@ -227,7 +227,14 @@ export function peerReview(root: string): CheckResult {
   const waiting = commits.slice(0, firstAt + 1).filter((c) => !c.recordsOnly && !due(c) && !c.reviewed).length;
   const head = `since review began (${first.short}, ${first.date}), ${since.length - missing.length} of ${since.length} pushed commits were covered by a review${waiting ? ` (${waiting} not pushed yet, due at the next push)` : ""}`;
   if (missing.length) return r(2, gate, "not-met", `${head}; not reviewed: ${missing.slice(0, 5).map((c) => c.short + (c.trailer ? " (trailer, no review record)" : "")).join(", ")}${missing.length > 5 ? "…" : ""}`);
-  if (since.length < MIN_SINCE) return r(2, gate, "not-visible", `${head}; ${MIN_SINCE} changes since adoption are needed before this counts (earlier history needs proof)`);
+  if (since.length < MIN_SINCE) {
+    // Review is set up and every pushed change since has one: the gate is in place
+    // and counts once 20 reviewed changes have followed adoption (ASSESSOR §2, DEC-087).
+    return {
+      ...r(2, gate, "in-place", `${head}; counts after ${MIN_SINCE} reviewed changes since adoption, ${since.length} so far (earlier history needs proof)`),
+      progress: { done: since.length, needed: MIN_SINCE, unit: "reviewed pushed changes" },
+    };
+  }
   return r(2, gate, "met", `${head} (a push review, a reviewed pull request, or a trailer with a review record); earlier history is not claimed`);
 }
 
@@ -373,10 +380,12 @@ export function committedSettings(root: string): { file: string; committed: bool
       return null;
     }
   };
+  // A committed file is named by its path in the repository, never by this machine's
+  // absolute path: the evidence goes into reports people share.
   return [
-    ...project.map((f) => (inHead.has(f) ? { file: join(root, f), committed: true, text: git(root, ["show", `HEAD:${f}`]) } : { file: join(root, f), committed: false, text: disk(join(root, f)) })),
+    ...project.map((f) => (inHead.has(f) ? { file: f, committed: true, text: git(root, ["show", `HEAD:${f}`]) } : { file: f, committed: false, text: disk(join(root, f)) })),
     { file: join(homedir(), ".claude", "settings.json"), committed: false, text: disk(join(homedir(), ".claude", "settings.json")) },
-  ].filter((s) => s.committed || existsSync(s.file));
+  ].filter((s) => s.committed || existsSync(s.file.startsWith("/") ? s.file : join(root, s.file)));
 }
 
 /** Where the agent is told, or made, to ask before publishing live. */
@@ -397,7 +406,7 @@ function confirmationRule(root: string): { found: string[]; machineOnly: string[
       const hits = [...(p.ask ?? []), ...(p.deny ?? [])].filter((x: unknown) => typeof x === "string" && /^Bash\(/.test(x) && DEPLOY_COMMAND.test(x));
       if (!hits.length) continue;
       const list = `${hits.slice(0, 3).join(", ")}${hits.length > 3 ? "…" : ""}`;
-      if (committed) found.push(`publish commands that stop for the person or are refused in ${file.slice(root.length + 1)}: ${list}`);
+      if (committed) found.push(`publish commands that stop for the person or are refused in ${file}: ${list}`);
       else machineOnly.push(`${file} (this machine's settings, not committed): ${list}`);
     } catch {
       /* unreadable settings: agentPermissions reports it */
@@ -481,7 +490,11 @@ export function configurationBasics(root: string): CheckResult {
   const tags = (git(root, ["tag", "--list"]) ?? "").split("\n").filter(Boolean);
   const remote = tags.length ? hostTags(root) : null;
   const versions = tags.filter((t) => /^v?\d+(\.\d+)+/.test(t));
-  if (!tags.length) problems.push("no release tags");
+  // Nothing released yet, said in the rules file or the README, needs no tag (DEC-147);
+  // the first release is tagged. A template's blank is a choice, not a statement.
+  const notLive = [...RULES_FILES, "README.md"].map((f) => read(root, f).split("\n").find((l) => NOT_LIVE.test(l) && !placeholders(l).length)).find(Boolean);
+  if (!tags.length && notLive) ok.push(`no release tags yet, and the repository says nothing is released: "${notLive.trim().slice(0, 60)}" (tag the first release)`);
+  else if (!tags.length) problems.push("no release tags (if nothing is released yet, say so in the rules file or the README: \"nothing is live yet\")");
   else if (remote && !tags.some((t) => remote.includes(t))) problems.push(`${tags.length} release tag(s) here, none pushed to the host`);
   else ok.push(`${tags.length} release tag(s)${remote ? ", pushed" : ""}${versions.length ? "" : " (none looks like a version, e.g. v1.2.0)"}`);
   const found = files.filter((f) => !/\.(png|jpe?g|gif|pdf|zip|lock|woff2?)$/i.test(f)).filter((f) => SECRET.test(read(root, f)));

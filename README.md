@@ -38,8 +38,8 @@ answers to both names.
 - **It sends nothing to us.** There is no account, no telemetry and no server of ours
   involved: the checks run on your machine, and the report is printed there.
 - **The one outside call is optional and yours.** If the GitHub CLI (`gh`) is logged
-  in, the tool asks GitHub, with your own login, for this repository's CI runs and
-  merged pull requests, read-only, to see checks that failed and reviews that
+  in, the tool asks GitHub, with your own login, for this repository's CI runs,
+  merged pull requests and branch rules, read-only, to see checks that failed, reviews that
   happened. `--offline` turns that off.
 - The AI prompt it prints goes nowhere by itself; you decide whether to give it to
   your coding agent.
@@ -50,28 +50,42 @@ Inside an AI coding agent, run it as a shell command (in Claude Code:
 ## Start from the templates
 
 `npx vibeqm-check init` creates the files a repository needs for Level 2: a rules file
-for AI agents (`AGENTS.md`), agent permissions, a CI workflow with secret scanning
-and static security analysis, issue and pull request templates, and short
-requirements, decisions and plan files under `VibeQM/`. It shows the list first,
-skips files that already exist, and writes only after you say yes (`--yes` when not
-run in a terminal). Fill every `<...>` with your repository's facts: the checks don't
-count a file that still has them. The templates come from the
+for AI agents (`AGENTS.md`), agent permissions, a blocking pre-commit hook
+(`.githooks/pre-commit`, enabled with `git config core.hooksPath .githooks`), a CI
+workflow with secret scanning and static security analysis, issue and pull request
+templates, and short requirements, decisions and plan files under `VibeQM/`. It
+shows the list first, skips files that already exist, and writes only after you say
+yes (`--yes` when not run in a terminal). The blanks your repository answers (the
+test and build commands, the description) are filled; fill the rest of the `<...>`
+with your repository's facts, or let your agent do it. The checks don't count a file
+that still has blanks. The templates come from the
 [companion repository](https://github.com/vibeqm/vqm).
 
 ## What you get
 
 - **The level** your repository's evidence supports, Level 1 to 3. Levels 4 and 5
   need measurements over time, which this version does not yet compute.
-- **Every check, with one of three results:**
+- **How far the next level is, and who does what.** The result leads with the
+  distance ("Level 2 is 4 items away"), what is already met, how many of the open
+  items your AI agent can do alone and how many need an answer from you, today's
+  level, and the autonomy the next level earns.
+- **Every check, with one of four results:**
   - **Met:** the evidence exists, and the report names it (a file, a setting, a hook,
     a commit).
   - **Not met:** the tool looked and the evidence is absent.
   - **Not visible:** the evidence lives outside the repository (for example settings
-    on your code host). It counts as not met until a person attaches proof.
+    on your code host). It counts as not met until a person attaches proof. With the
+    GitHub CLI logged in, the tool reads branch protection and required checks
+    itself.
+  - **In place:** the practice is set up and recorded but counts with use (peer
+    review counts after 20 reviewed pushes). The result shows the count, so you see
+    when it will be met.
 - **For every open check:** why it matters, concrete steps for this repository, how to
-  confirm it worked, and an estimate in minutes.
+  confirm it worked, an estimate in minutes, and who it needs: your agent alone, an
+  answer from you, a setting on the code host, or use.
 - **A prompt** at the end that your AI coding agent can follow to close the gaps,
-  cheapest first. The prompt tells the agent to produce real evidence, and to ask you
+  cheapest first. The prompt tells the agent to do everything it can alone first and
+  then ask you for the rest in one message, to produce real evidence, and to ask you
   before writing any proof on your behalf.
 
 ## What counts as a peer review
@@ -118,7 +132,8 @@ apart. Record it in a `vqm-proof.json` file, in the repository or any parent fol
 }
 ```
 
-A proof only turns **Not visible** into **Met (attested)**. It never overrides **Not
+A proof only turns **Not visible** (or **In place**, for history the tool does not
+claim) into **Met (attested)**. It never overrides **Not
 met**, because what the tool saw outranks what anyone says. Proof is signed by a
 named person and expires after a year.
 
@@ -130,12 +145,12 @@ that caused it. The report appears on the run's summary page.
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }      # the checks sample history
-- uses: vibeqm/vibeqm-check@v0.4.5
+- uses: vibeqm/vibeqm-check@v0.4.6
   with: { min-level: 2 }        # optional: fail the run below this level
 ```
 
-To let the action read the repository's CI runs and pull requests, give the job
-read access (`permissions: { contents: read, actions: read, pull-requests: read }`).
+To let the action read the repository's CI runs, pull requests and branch rules,
+give the job read access (`permissions: { contents: read, actions: read, pull-requests: read }`).
 Pass `offline: true` to read the repository only.
 
 ## What it is, and what it is not

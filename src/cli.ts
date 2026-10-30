@@ -3,7 +3,7 @@
 // run the VibeQM fact checks on a repository. vibeqm-check init [path] [--yes]: create the
 // Level 2 template files.
 import { existsSync, statSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import { level2 } from "./checks/level2.js";
 import { level3 } from "./checks/level3.js";
 import { basics2, basics3 } from "./checks/basics.js";
@@ -24,11 +24,14 @@ if (args[0] === "init") {
     console.log(`vibeqm-check init [path] [--yes]
 
 Create the VibeQM Level 2 template files in a repository: a rules file for AI agents,
-agent permissions, a CI workflow with security checks, issue and pull request
-templates, and short requirements, decisions and plan files under VibeQM/.
+agent permissions, a blocking pre-commit hook, a CI workflow with security checks,
+issue and pull request templates, and short requirements, decisions and plan files
+under VibeQM/. Blanks the repository answers (the test and build commands, the
+description) are filled; the rest are left as <...> for you or your agent.
 
 It lists every file first, skips files that already exist, and writes only after you
-say yes. It never overwrites a file, never commits, and installs no hooks.
+say yes. It never overwrites a file, never commits, and enables no hook (the hook it
+writes is enabled with one command, git config core.hooksPath .githooks).
 
   path    the repository (default: the current directory)
   --yes   create the files without asking (needed when not run in a terminal)
@@ -119,7 +122,9 @@ const root = resolve(args.find((a, i) => !a.startsWith("--") && (pi < 0 || i !==
 
 let results = [...level2, ...basics2, ...level3, ...basics3].map((check) => check(root));
 const proofFiles = proofArg ? [resolve(proofArg)] : findProofFiles(root);
-const proofFile = proofFiles.length ? proofFiles.join(", ") : null;
+// Named by their path in the repository when inside it: the report is for sharing, and
+// an absolute path carries the machine's layout and the account name.
+const proofFile = proofFiles.length ? proofFiles.map((f) => (f.startsWith(`${root}/`) ? relative(root, f) : f)).join(", ") : null;
 if (proofFiles.length) {
   try {
     const merged = mergeProofs(proofFiles);
@@ -193,10 +198,10 @@ if (json) {
       });
   const prompt = aiPrompt(results);
   // With nothing open at the next level there is no to-do list to wait for.
-  if (prompt) await ask("Press Enter to show what to do next (q quits). ");
+  if (prompt) await ask("Press Enter for the list of what to do (q quits). ");
   console.log(`\n${terminalDetails(results, proofFile, style)}\n`);
   if (prompt) {
-    await ask("Press Enter to show a prompt your AI can use to bring this repository to the next level (q quits). ");
+    await ask("Press Enter for the prompt to paste into your AI coding agent (q quits). ");
     console.log(`\n${prompt}\n`);
   }
   rl.close();

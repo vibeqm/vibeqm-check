@@ -56,7 +56,9 @@ test("--out writes the report (named for the folder), and refuses to touch an ex
   const target = join(root, "report.md");
   const written = readFileSync(target, "utf8");
   assert.match(written, new RegExp(`^# VibeQM self-assessment: ${basename(root)}, `));
-  assert.match(written, /\*\*You are on Level 1, Unguided\.\*\*/);
+  assert.match(written, /\*\*Level 2, Guarded, is \d+ items away\.\*\*/);
+  assert.match(written, /Today's level: 1, Unguided\. Level 2 earns:/);
+  assert.match(written, /_Claim: VibeQM v[\d.]+ self-assessed: Level 1, \d{4}-\d\d-\d\d, vibeqm-check \(fact checks only\); Level 2: \d+ of 13 items open\._/);
   assert.ok(!written.includes(root), "the report names the folder, never the absolute path");
   const second = run(["--out", "report.md", root], root);
   assert.equal(second.status, 2);
