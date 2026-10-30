@@ -1,6 +1,6 @@
 {
   "name": "vibeqm-check",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Self-assessment for the Vibe Quality Model (VibeQM): fact checks on a repository, with evidence for every gate",
   "keywords": [
     "vibe-quality-model",

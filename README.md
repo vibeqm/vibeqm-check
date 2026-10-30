@@ -78,8 +78,8 @@ that still has blanks. The templates come from the
     GitHub CLI logged in, the tool reads branch protection and required checks
     itself.
   - **In place:** the practice is set up and recorded but counts with use (peer
-    review counts after 20 reviewed pushes). The result shows the count, so you see
-    when it will be met.
+    review counts after 20 reviewed changes; one unreviewed push restarts the count).
+    The result shows the count, so you see when it will be met.
 - **For every open check:** why it matters, concrete steps for this repository, how to
   confirm it worked, an estimate in minutes, and who it needs: your agent alone, an
   answer from you, a setting on the code host, or use.
@@ -145,7 +145,7 @@ that caused it. The report appears on the run's summary page.
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }      # the checks sample history
-- uses: vibeqm/vibeqm-check@v0.4.6
+- uses: vibeqm/vibeqm-check@v0.4.7
   with: { min-level: 2 }        # optional: fail the run below this level
 ```
 

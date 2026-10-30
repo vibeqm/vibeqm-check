@@ -2,12 +2,12 @@
 // evidence a person can open; anything the tool can't see is "not-visible", which
 // counts as not met until a person supplies proof (ASSESSOR rule 6). "in-place" is a
 // gate whose practice is set up and recorded but measured over use (peer review needs
-// 20 reviewed pushes): it counts as not met for the level, and the result says how far
+// 20 reviewed changes): it counts as not met for the level, and the result says how far
 // along it is, so the person sees the delivery date instead of a flat refusal (VQM_SPEC §13).
 export type Status = "met" | "not-met" | "not-visible" | "in-place";
 
 /** The VibeQM framework version these checks follow; a claim names it (VQM_SPEC §13). */
-export const FRAMEWORK_VERSION = "0.4.6";
+export const FRAMEWORK_VERSION = "0.4.7";
 
 export interface CheckResult {
   level: number;

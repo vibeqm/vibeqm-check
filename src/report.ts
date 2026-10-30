@@ -33,7 +33,7 @@ export const LEVELS: Record<number, { name: string; what: string; earns: string 
   2: {
     name: "Guarded",
     what: "every project has the professional basics (written requirements, a rules file, version control, a peer review and automated checks on every change, a security review before every push, development kept apart from production, limited agent permissions, and a human owner for every change)",
-    earns: "the AI edits code on its own branch and runs the checks while you supervise; you own and approve every change",
+    earns: "you approve every change after the checks and a review, instead of reading every line yourself; the AI keeps working on its own branch, and a bad change now meets a gate that can refuse it",
   },
   3: {
     name: "Standardized",
@@ -95,12 +95,13 @@ export const COVERAGE =
   "This tool runs the fact checks of the 13 Level 2 gates (the README and the formatter configuration the specification also lists at Level 2 are not checked) and lists every Level 3 gate, checking about half of them from the repository (the rest need proof a person attaches); Levels 4 and 5 are not checked. The judgment questions, a second model and a countersignature are the rest of an assessment.";
 
 export const PRIVACY =
-  "Read-only and private: vibeqm-check changes no existing file in the repository (the only file it ever writes is a report you ask for, with --out) and sends nothing to us (no account, no telemetry). If the GitHub CLI is logged in, it asks GitHub, with your own login, for this repository's CI runs, pull requests and branch rules; --offline turns that off.";
+  "Read-only and private: this check changes no file in the repository (the tool writes only what you ask for: a report with --out, or the starter files that init lists and you confirm) and sends nothing to us (no account, no telemetry). If the GitHub CLI is logged in, it asks GitHub, with your own login, for this repository's CI runs, pull requests and branch rules; --offline turns that off.";
 
 /** The claim a scorecard carries (VQM_SPEC §13), with the progress profile at every level. */
 export function claim(results: CheckResult[], date: string): string {
-  const { reached, next, at, open } = parts(results);
-  const profile = at.length && open.length ? `; Level ${next}: ${open.length} of ${at.length} items open` : "";
+  const { reached, next, at, open, inPlace } = parts(results);
+  const counting = inPlace.map((r) => (r.progress ? `${r.gate.toLowerCase()} in place, ${r.progress.done} of ${r.progress.needed} ${r.progress.unit}` : `${r.gate.toLowerCase()} in place`));
+  const profile = at.length && open.length ? `; Level ${next}: ${open.length} of ${at.length} items open${counting.length ? `, ${counting.join(", ")}` : ""}` : "";
   return `VibeQM v${FRAMEWORK_VERSION} self-assessed: Level ${reached}, ${date}, vibeqm-check (fact checks only)${profile}`;
 }
 
@@ -140,20 +141,26 @@ export function lead(results: CheckResult[], cta: string): { headline: string; l
   if (todo.length) {
     const split: string[] = [];
     const agentMinutes = p.agent.reduce((n, x) => n + x.f.minutes, 0);
-    if (p.agent.length) split.push(`your AI agent can do ${p.agent.length === todo.length ? (todo.length === 1 ? "it" : "all of them") : `${p.agent.length} of them`} now (about ${agentMinutes} minutes)`);
+    const confirms = p.agent.filter((x) => x.f.confirm).length;
+    if (p.agent.length) split.push(`your AI agent can do ${p.agent.length === todo.length ? (todo.length === 1 ? "it" : "all of them") : `${p.agent.length} of them`} now${confirms ? `, asking you to confirm ${confirms === 1 ? "one record" : `${confirms} records`} as it goes` : ""} (about ${agentMinutes} minutes)`);
     const asks = p.answers.map(({ r }) => ASKS[r.gate] ?? r.gate.toLowerCase());
     if (p.answers.length) split.push(`${p.answers.length} need${p.answers.length === 1 ? "s" : ""} an answer from you (${asks.join(", ")})`);
     if (p.host.length) split.push(`${p.host.length} ${p.host.length === 1 ? "is" : "are"} a setting on the code host (${p.host.map(({ r }) => ASKS[r.gate] ?? r.gate.toLowerCase()).join(", ")})`);
     if (p.use.length) split.push(`${p.use.length} count${p.use.length === 1 ? "s" : ""} with use (${p.use.map(({ r }) => r.gate.toLowerCase()).join(", ")})`);
     const sentence = split.join("; ");
-    lines.push(`${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}${split.length ? "." : ""}${waiting.length ? ` Then ${countdown.join("; ")}.` : ""}`);
+    // Peer review not set up yet still ends in the 20-change count: say so now, not at push 1.
+    const review = todo.find(({ r }) => r.gate === "Peer review on every change");
+    const ahead = review ? ` Then peer review counts over your next 20 reviewed changes: Level ${p.next} is met on the 20th, not in this session.` : "";
+    lines.push(`${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}${split.length ? "." : ""}${waiting.length ? ` Then ${countdown.join("; ")}.` : ahead}`);
   }
   lines.push(`Today's level: ${p.reached}, ${now.name}. Level ${p.next} earns: ${up.earns}.`);
-  lines.push(cta);
+  // No rules file at all: init comes before the list, and the call to action says so.
+  const bare = p.open.some(({ r }) => r.gate === "Agent rules file" && /^none of/.test(r.evidence));
+  lines.push(bare ? `First: \`npx vibeqm-check init\` creates the starter files (it shows the list and asks). ${cta}` : cta);
   return { headline, lines };
 }
 
-export const CTA_REPORT = 'Start: say "do it" to the agent that ran this, or paste the prompt at the end of this report into Claude Code, Codex or another agent working in this repository. It asks you for what it needs in one message.';
+export const CTA_REPORT = 'Start: say "do it" to the agent that ran this, or paste the prompt at the end of this report into Claude Code, Codex or another agent working in this repository. The agent does everything it can alone, then asks you everything in one message, and shows you each change before it commits.';
 
 export function summary(repo: string, results: CheckResult[], date: string): string {
   // The folder name, not the absolute path: a saved or shared report shouldn't carry

@@ -34,10 +34,11 @@ test("the lead says how far the next level is, who does what, and what it earns;
 test("a gate in place counts with use: the lead gives the countdown, the scorecard its own mark", () => {
   const results: CheckResult[] = [
     { level: 2, gate: "Agent rules file", status: "met", evidence: "AGENTS.md" },
-    { level: 2, gate: "Peer review on every change", status: "in-place", evidence: "since review began (abc1234, 2026-10-20), 3 of 3 pushed commits were covered by a review; counts after 20 reviewed changes since adoption, 3 so far", progress: { done: 3, needed: 20, unit: "reviewed pushed changes" } },
+    { level: 2, gate: "Peer review on every change", status: "in-place", evidence: "since review began (abc1234, 2026-10-20), 3 of 3 pushed changes were covered by a review; counts after 20 reviewed changes since adoption, 3 so far", progress: { done: 3, needed: 20, unit: "reviewed changes" } },
   ];
   const out = terminalSummary("/shop", results, "2026-10-30", wide);
-  assert.match(out.replace(/\n/g, " "), /Level 2 is in place: 1 of 2 met, and peer review on every change counts after 20 reviewed pushed changes \(3 so far\)\./);
+  assert.match(out.replace(/\n/g, " "), /Level 2 is in place: 1 of 2 met, and peer review on every change counts after 20 reviewed changes \(3 so far\)\./);
+  assert.match(out, /Claim: .*Level 2: 1 of 2 items open, peer review on every change in place, 3 of 20 reviewed changes\./);
   assert.match(out, /◐ Peer review on every change/);
   assert.match(out, /◐ in place: set up, counts with use/);
   const two = terminalDetails(results, null, wide);
@@ -76,6 +77,10 @@ test("screen one leads with the answer: level, gap, minutes", () => {
   // 10 + 5 minutes for the two open gates, both the agent's.
   assert.match(out, /Your AI agent can do all of them now \(about 15 minutes\)\./);
   assert.match(out, /Start: in Claude Code, Codex or another agent, say "run vibeqm-check and do what it says/);
+  // No rules file at all: init is the first step, said before the call to action.
+  const bare = terminalSummary("/shop", [{ level: 2, gate: "Agent rules file", status: "not-met", evidence: "none of AGENTS.md, CLAUDE.md found" }], "2026-10-13", wide);
+  assert.match(bare.replace(/\n/g, " "), /First: npx vibeqm-check init creates the starter files \(it shows the list and asks\)\. Start:/);
+  assert.ok(!out.includes("vibeqm-check init"), "a repository with a rules file is not told to run init");
   assert.match(out, /Level 2 · Guarded\s+□□\s+0 of 2 met/);
   // Levels beyond the next one show only their bar.
   assert.match(out, /Level 3 · Standardized/);

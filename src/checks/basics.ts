@@ -125,7 +125,7 @@ export function requirementsFirst(root: string): CheckResult {
   // An issue template beside an unfilled requirements file is a template set copied
   // and not filled in yet: it doesn't carry the gate alone.
   const filledDocs = found.filter((f) => !f.startsWith(".github/ISSUE_TEMPLATE/"));
-  if (found.length && (filledDocs.length || !unfilled.length)) return r(2, gate, "met", `requirements or issue templates in the repository: ${found.slice(0, 3).join(", ")}${found.length > 3 ? "…" : ""}${note ? `; ${note}` : ""}`);
+  if (found.length && (filledDocs.length || !unfilled.length)) return r(2, gate, "met", `requirements or issue templates in the repository: ${found.slice(0, 3).join(", ")}${found.length > 3 ? "…" : ""}${note ? `; ${note}` : ""}. Whether each change traces to one is a judgment question of the full assessment`);
   if (unfilled.length) return r(2, gate, "not-met", `${note}: fill it with this project's requirements, or delete it`);
   return r(2, gate, "not-visible", "no requirements file or issue templates in the repository; if requirements live in an issue tracker, attach proof that every change traces to one and that unclear requests get clarifying questions with options");
 }
@@ -221,18 +221,31 @@ export function peerReview(root: string): CheckResult {
     const trailers = commits.filter((c) => c.trailer).length;
     return r(2, gate, "not-visible", `${trailers ? `${trailers} of the last ${commits.length} commits carry a \`Reviewed-by:\` trailer, but none has a matching review record (a review file in the commit, or one naming it)` : `no reviewed changes found in the last ${commits.length} commits (a \`Reviewed-by:\` trailer plus a review record, or a reviewed pull request)`}; ${need}`);
   }
-  const first = commits[firstAt];
-  const since = commits.slice(0, firstAt + 1).filter((c) => !c.recordsOnly && due(c));
-  const missing = since.filter((c) => !c.reviewed);
-  const waiting = commits.slice(0, firstAt + 1).filter((c) => !c.recordsOnly && !due(c) && !c.reviewed).length;
-  const head = `since review began (${first.short}, ${first.date}), ${since.length - missing.length} of ${since.length} pushed commits were covered by a review${waiting ? ` (${waiting} not pushed yet, due at the next push)` : ""}`;
-  if (missing.length) return r(2, gate, "not-met", `${head}; not reviewed: ${missing.slice(0, 5).map((c) => c.short + (c.trailer ? " (trailer, no review record)" : "")).join(", ")}${missing.length > 5 ? "…" : ""}`);
+  // One unreviewed pushed change after adoption restarts the count at the next
+  // reviewed change (DEC-148): the gate names the change that broke the run, and the
+  // person recovers by reviewing from then on, instead of waiting for the sample to forget.
+  const window = commits.slice(0, firstAt + 1);
+  const brokeAt = window.findIndex((c) => !c.recordsOnly && due(c) && !c.reviewed);
+  let startAt = firstAt;
+  let restart = "";
+  if (brokeAt >= 0) {
+    const broke = window[brokeAt];
+    const resumed = window.slice(0, brokeAt).map((c) => c.reviewed && !c.recordsOnly).lastIndexOf(true);
+    const note = `${broke.short} (${broke.date}${broke.trailer ? ", trailer but no review record" : ""})`;
+    if (resumed < 0) return r(2, gate, "not-met", `review began at ${commits[firstAt].short} (${commits[firstAt].date}), but the latest pushed change was not reviewed: ${note}; the count restarts at the next reviewed change`);
+    startAt = resumed;
+    restart = ` (restarted at ${window[resumed].short} after the unreviewed change ${note})`;
+  }
+  const first = commits[startAt];
+  const since = commits.slice(0, startAt + 1).filter((c) => !c.recordsOnly && due(c));
+  const waiting = commits.slice(0, startAt + 1).filter((c) => !c.recordsOnly && !due(c) && !c.reviewed).length;
+  const head = `since review began (${first.short}, ${first.date})${restart}, ${since.length} of ${since.length} pushed changes were covered by a review${waiting ? ` (${waiting} not pushed yet, due at the next push)` : ""}`;
   if (since.length < MIN_SINCE) {
     // Review is set up and every pushed change since has one: the gate is in place
     // and counts once 20 reviewed changes have followed adoption (ASSESSOR §2, DEC-087).
     return {
-      ...r(2, gate, "in-place", `${head}; counts after ${MIN_SINCE} reviewed changes since adoption, ${since.length} so far (earlier history needs proof)`),
-      progress: { done: since.length, needed: MIN_SINCE, unit: "reviewed pushed changes" },
+      ...r(2, gate, "in-place", `${head}; counts after ${MIN_SINCE} reviewed changes since adoption, ${since.length} so far; one unreviewed push restarts the count (earlier history needs proof)`),
+      progress: { done: since.length, needed: MIN_SINCE, unit: "reviewed changes" },
     };
   }
   return r(2, gate, "met", `${head} (a push review, a reviewed pull request, or a trailer with a review record); earlier history is not claimed`);
@@ -247,7 +260,11 @@ export function verificationTools(root: string): CheckResult {
   const pkg = files.includes("package.json") && /"(lint|typecheck)"\s*:/.test(read(root, "package.json"));
   const cargo = files.filter((f) => /(^|\/)Cargo\.toml$/.test(f)).some((f) => /^\[(workspace\.)?lints/m.test(read(root, f)));
   const tsStrict = files.filter((f) => /(^|\/)tsconfig[^/]*\.json$/.test(f)).some((f) => /"strict"\s*:\s*true/.test(read(root, f)));
-  const run = code(ciText(root, files) + "\n" + hookText(root)).match(ANALYZE_COMMANDS)?.[0];
+  const wired = code(ciText(root, files) + "\n" + hookText(root));
+  const run = wired.match(ANALYZE_COMMANDS)?.[0];
+  // The gate is that the checks run on every change: a hook or CI job must run the
+  // analyzer, or at least the project's test or lint command, beside the configuration.
+  const runs = wired.match(CHECK_COMMANDS)?.[0];
   const gate = "Verification on every change";
   const ev = [
     ...lint.slice(0, 3),
@@ -257,7 +274,8 @@ export function verificationTools(root: string): CheckResult {
     ...(tsStrict ? ["tsconfig strict mode"] : []),
     ...(run ? [`\`${run.trim()}\` runs in a hook or CI`] : []),
   ];
-  if (ev.length) return r(2, gate, "met", `linter or static-analysis configuration: ${ev.join(", ")} (that it runs and blocks is the "Checks before merge" gate)`);
+  if (ev.length && (run || runs)) return r(2, gate, "met", `linter or static-analysis configuration: ${ev.join(", ")}; a hook or CI job runs \`${(run ?? runs ?? "").trim()}\` (that a failure blocks the change is the "Checks before merge" gate)`);
+  if (ev.length) return r(2, gate, "not-met", `linter or static-analysis configuration: ${ev.join(", ")}, but no enabled hook or CI job runs it or the tests: add the command to .githooks/pre-commit (enabled with \`git config core.hooksPath .githooks\`) or to the CI workflow`);
   return r(
     2,
     gate,
@@ -282,7 +300,13 @@ export function securityBeforePush(root: string): CheckResult {
   const thinShare = code_.length ? code_.filter((f) => thin.some((e) => f.endsWith(e))).length / code_.length : 0;
   const reviewTools = ["security-review", "codeql", "semgrep", "snyk", "bandit", "ruff security rules (bandit)"].filter((x) => tools.includes(x));
   const note = reviewTools.length === 1 && reviewTools[0] === "semgrep" && thinShare > 0.3 ? " (note: Semgrep's rules barely cover this repository's main language; an AI security review of each push covers it better)" : "";
-  const ev = `found: ${[...tools, ...(dependabot ? ["dependabot"] : [])].join(", ")}${note}`;
+  const secretTools = tools.filter((x) => ["gitleaks", "trufflehog", "detect-secrets", "git-secrets"].includes(x));
+  const depTools = [...tools.filter((x) => ["osv-scanner", "npm audit", "pip-audit", "trivy", "dependency-review", "snyk"].includes(x)), ...(dependabot ? ["dependabot"] : [])];
+  const ev = [
+    `secret scanning: ${secretTools.join(", ") || "none"}`,
+    `security review of each change (an AI review or static security analysis): ${reviewTools.join(", ") || "none"}${note}`,
+    `dependency scan: ${depTools.join(", ") || "none"}${depTools.length ? " (whether it blocks on critical findings is a CI or host setting, not checked)" : ""}`,
+  ].join("; ");
   if (hasSecrets && hasReview) return r(2, gate, "met", ev);
   return r(2, gate, "not-met", `${ev}; missing ${[!hasReview ? "an AI or static security review of each change" : "", !hasSecrets ? "secret scanning" : ""].filter(Boolean).join(" and ")}`);
 }

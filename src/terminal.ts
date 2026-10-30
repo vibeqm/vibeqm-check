@@ -50,8 +50,8 @@ function clip(s: string, max: number): string {
   if (max <= 1) return "";
   if (s.length <= max) return s;
   const cut = s.slice(0, max - 1);
-  // Cut at a word boundary when one is close enough to keep; never mid-word by default.
-  const space = cut.lastIndexOf(" ");
+  // Cut at a word or path boundary when one is close enough to keep; never mid-word by default.
+  const space = Math.max(cut.lastIndexOf(" "), cut.lastIndexOf("/"));
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
@@ -71,7 +71,7 @@ const widthOf = (style: Style) => Math.max(40, Math.min(style.width, 110));
 const markOf = (p: ReturnType<typeof paint>) => (r: CheckResult) =>
   r.status === "met" ? p.green("✓") : r.status === "not-met" ? p.red("✗") : r.status === "in-place" ? p.cyan("◐") : p.yellow("○");
 
-export const CTA_TERMINAL = 'Start: in Claude Code, Codex or another agent, say "run vibeqm-check and do what it says, asking me before each change". Or press Enter for the list and the prompt to paste.';
+export const CTA_TERMINAL = 'Start: in Claude Code, Codex or another agent, say "run vibeqm-check and do what it says: everything you can alone first, then ask me everything in one message, and show me each change before you commit". Or press Enter for the list and the prompt to paste.';
 
 /** Screen one: the answer first — how far the next level is, who does what, what it
  * earns — then the scorecard. The full privacy note stays in the footer (terminalDetails),
@@ -129,7 +129,7 @@ function scorecard(results: CheckResult[], style: Style): string {
   out.push(
     p.dim(
       wrap(
-        `${p.green("✓")} met   ${p.red("✗")} not met   ${p.cyan("◐")} in place: set up, counts with use   ${p.yellow("○")} not visible: counts as not met until a person attaches proof   attested · = met by a person's proof`,
+        `${p.green("✓")} met · ${p.red("✗")} not met · ${p.cyan("◐")} in place: set up, counts with use · ${p.yellow("○")} not visible: not met until you attach proof · "attested" before the evidence: met by your proof`,
         width,
         "",
         "",
@@ -151,7 +151,9 @@ export function terminalDetails(results: CheckResult[], proofFile: string | null
 
   // The to-do list for the next level, cheapest first (the AI prompt's order).
   if (open.length) {
-    out.push(p.bold(`TO REACH LEVEL ${next}: ${open.length} item${open.length === 1 ? "" : "s"}, about ${minutes} minutes`), "");
+    const review = open.find(({ r }) => r.gate === "Peer review on every change");
+    const wait = review ? (review.r.progress ? `; then ${review.r.progress.needed - review.r.progress.done} more reviewed changes` : "; then 20 reviewed changes") : "";
+    out.push(p.bold(`TO REACH LEVEL ${next}: ${open.length} item${open.length === 1 ? "" : "s"}, about ${minutes} minutes of setup${wait}`), "");
     open.forEach(({ r, f }, i) => {
       const n = `${i + 1}.`.padEnd(4);
       out.push(`${n}${mark(r)} ${p.bold(r.gate)}  ${p.dim(`${word(r)} · ~${f.minutes} min · ${NEEDS_LABEL[f.needs]}`)}`);

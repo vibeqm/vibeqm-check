@@ -76,9 +76,14 @@ test("security before push: ruff with the bandit rules counts as static security
   assert.equal(securityBeforePush(noS).status, "not-met");
 });
 
-test("verification: an .editorconfig is not a linter; a markdownlint config is", () => {
+test("verification: an .editorconfig is not a linter; a markdownlint config is, once a hook or CI job runs the checks", () => {
   assert.equal(verificationTools(repo({ ".editorconfig": "root = true\n" })).status, "not-met");
-  assert.equal(verificationTools(repo({ ".markdownlint-cli2.jsonc": "{}\n" })).status, "met");
+  const configOnly = verificationTools(repo({ ".markdownlint-cli2.jsonc": "{}\n" }));
+  assert.equal(configOnly.status, "not-met");
+  assert.match(configOnly.evidence, /no enabled hook or CI job runs it or the tests/);
+  const wired = verificationTools(repo({ ".markdownlint-cli2.jsonc": "{}\n", ".github/workflows/ci.yml": "steps:\n - run: npm test\n" }));
+  assert.equal(wired.status, "met");
+  assert.match(wired.evidence, /a hook or CI job runs `npm test`/);
 });
 
 test("security before push: a tool named only in a comment does not count", () => {
@@ -90,7 +95,7 @@ test("verification: Dart's analyzer config, or an analyzer run in CI, counts", (
   assert.equal(verificationTools(repo({})).status, "not-met");
   // A formatter is not verification: Prettier alone never meets the gate.
   assert.equal(verificationTools(repo({ ".prettierrc": "{}\n" })).status, "not-met");
-  assert.equal(verificationTools(repo({ "app/analysis_options.yaml": "analyzer:\n" })).status, "met");
+  assert.equal(verificationTools(repo({ "app/analysis_options.yaml": "analyzer:\n", ".github/workflows/ci.yml": "steps:\n - run: flutter test\n" })).status, "met");
   assert.equal(verificationTools(repo({ ".github/workflows/ci.yml": "steps:\n - run: cargo clippy -- -D warnings\n" })).status, "met");
   assert.equal(verificationTools(repo({ ".github/workflows/ci.yml": "steps:\n # run: cargo clippy\n" })).status, "not-met");
 });
@@ -140,16 +145,22 @@ test("peer review: same-company models and unknown names that are not a person d
   }
 });
 
-test("peer review: measured from adoption; needs 20 changes, then every one reviewed", () => {
+test("peer review: measured from adoption; needs 20 changes, then every one reviewed; one unreviewed push restarts the count", () => {
   const few = peerReview(reviewedRepo([{}, GLM, GLM]));
   assert.equal(few.status, "in-place");
-  assert.match(few.evidence, /since review began \([0-9a-f]+, [0-9-]+\), 2 of 2 pushed commits were covered by a review; counts after 20 reviewed changes since adoption, 2 so far/);
-  assert.deepEqual(few.progress, { done: 2, needed: 20, unit: "reviewed pushed changes" });
+  assert.match(few.evidence, /since review began \([0-9a-f]+, [0-9-]+\), 2 of 2 pushed changes were covered by a review; counts after 20 reviewed changes since adoption, 2 so far/);
+  assert.deepEqual(few.progress, { done: 2, needed: 20, unit: "reviewed changes" });
   const enough = peerReview(reviewedRepo([{}, ...Array(20).fill({ trailer: "Reviewed-by: A. Person <a@example.com>", record: true })]));
   assert.equal(enough.status, "met");
+  // An unreviewed change in the middle restarts the count at the next reviewed one, and is named.
   const gap = peerReview(reviewedRepo([GLM, {}, GLM]));
-  assert.equal(gap.status, "not-met");
-  assert.match(gap.evidence, /2 of 3 pushed commits were covered by a review; not reviewed: [0-9a-f]+/);
+  assert.equal(gap.status, "in-place");
+  assert.match(gap.evidence, /restarted at [0-9a-f]+ after the unreviewed change [0-9a-f]+ \([0-9-]+\)\), 1 of 1 pushed changes/);
+  assert.equal(gap.progress?.done, 1);
+  // An unreviewed change at the tip is not met, and says the count restarts at the next reviewed one.
+  const tip = peerReview(reviewedRepo([GLM, GLM, {}]));
+  assert.equal(tip.status, "not-met");
+  assert.match(tip.evidence, /the latest pushed change was not reviewed: [0-9a-f]+ \([0-9-]+\); the count restarts at the next reviewed change/);
 });
 
 test("configuration basics: an allowlist outside test folders excuses nothing", () => {
@@ -176,7 +187,7 @@ test("peer review: a passing push-review record by another company counts on its
   add("c.md", record("PASS", "deepseek-v4-pro:cloud"));
   const r = peerReview(root);
   assert.equal(r.status, "met");
-  assert.match(r.evidence, /21 of 21 pushed commits were covered by a review/);
+  assert.match(r.evidence, /21 of 21 pushed changes were covered by a review/);
   // The review is due at the push. A new commit not pushed yet doesn't count
   // against the repository; once pushed without a review, it does.
   const remote = mkdtempSync(join(tmpdir(), "vqm-remote-"));
