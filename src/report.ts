@@ -150,7 +150,6 @@ export function lead(results: CheckResult[], cta: string): { headline: string; l
   }
   lines.push(`Today's level: ${p.reached}, ${now.name}. Level ${p.next} earns: ${up.earns}.`);
   lines.push(cta);
-  if (todo.length >= 5) lines.push(REUSE);
   return { headline, lines };
 }
 
@@ -180,6 +179,7 @@ export function details(results: CheckResult[], proofFile: string | null = null)
       out.push(`### ${r.gate}: ${label(r)} (~${f.minutes} min; ${NEEDS_LABEL[f.needs]})`, "", `Found: ${showPath(r.evidence)}`, "");
       out.push(`Why: ${f.why}`, "", ...f.steps.map((s) => `- ${s}`), "", `Verify: ${f.verify}`, "");
     }
+    if (open.length >= 5) out.push(`_${REUSE}_`, "");
   }
   out.push(
     "## All checks",

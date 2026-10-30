@@ -75,11 +75,13 @@ export function detectFacts(root: string): Facts {
     if (t.length && !facts.test) facts.test = t.map((x) => `make ${x}`).join(" && ");
     if (targets.includes("build") && !facts.build) facts.build = "make build";
   }
+  // Toolchains with one standard test command are facts; a Python project is not
+  // (tox, poetry, unittest...), so pytest is claimed only where the project names it.
   if (!facts.test) {
-    if (existsSync(join(root, "pyproject.toml")) || existsSync(join(root, "pytest.ini")) || existsSync(join(root, "setup.cfg"))) facts.test = "pytest";
+    const py = read(root, "pyproject.toml") + read(root, "pytest.ini") + read(root, "setup.cfg") + read(root, "requirements-dev.txt");
+    if (/pytest/.test(py)) facts.test = "pytest";
     else if (existsSync(join(root, "go.mod"))) facts.test = "go vet ./... && go test ./...";
     else if (existsSync(join(root, "Cargo.toml"))) facts.test = "cargo test";
-    else if (existsSync(join(root, "Gemfile"))) facts.test = "bundle exec rake test";
     else if (existsSync(join(root, "pubspec.yaml"))) facts.test = "dart analyze && dart test";
   }
   return facts;

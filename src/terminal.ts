@@ -1,7 +1,7 @@
 // A scan laid out for a person at a terminal, in two screens: first the answer
 // (the lead and a scorecard per level), then on request a numbered to-do list
 // for the next level. Agents, pipes and CI get the Markdown report instead (report.ts).
-import { NEEDS_LABEL } from "./fixes.js";
+import { NEEDS_LABEL, REUSE } from "./fixes.js";
 import { basename } from "node:path";
 import { claim, COVERAGE, lead, levelReached, parts, PRIVACY, showPath } from "./report.js";
 import { FRAMEWORK_VERSION, type CheckResult } from "./types.js";
@@ -163,6 +163,7 @@ export function terminalDetails(results: CheckResult[], proofFile: string | null
       out.push(...wrap(plain(f.verify, p), width, `${pad}${p.dim("Check:")} `, `${pad}       `));
       out.push("");
     });
+    if (open.length >= 5) out.push(...wrap(REUSE, width, "", ""), "");
   }
 
   out.push(
