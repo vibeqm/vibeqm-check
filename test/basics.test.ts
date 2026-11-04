@@ -6,8 +6,9 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 
 process.env.VQM_OFFLINE = "1"; // the tests never ask a code host
+
+import { configurationBasics, devApartFromProd, diagrams, peerReview, placeholders, releaseTags, requirementsFirst, securityBeforePush, threeEnvironments, verificationTools } from "../src/checks/basics.js";
 import { agentPermissions, agentRulesFile } from "../src/checks/level2.js";
-import { configurationBasics, devApartFromProd, releaseTags, diagrams, peerReview, placeholders, requirementsFirst, securityBeforePush, threeEnvironments, verificationTools } from "../src/checks/basics.js";
 
 function repo(files: Record<string, string>, tag = false): string {
   const root = mkdtempSync(join(tmpdir(), "vqm-"));
