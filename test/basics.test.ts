@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 process.env.VQM_OFFLINE = "1"; // the tests never ask a code host
 import { agentPermissions, agentRulesFile } from "../src/checks/level2.js";
-import { configurationBasics, devApartFromProd, diagrams, peerReview, placeholders, requirementsFirst, securityBeforePush, threeEnvironments, verificationTools } from "../src/checks/basics.js";
+import { configurationBasics, devApartFromProd, releaseTags, diagrams, peerReview, placeholders, requirementsFirst, securityBeforePush, threeEnvironments, verificationTools } from "../src/checks/basics.js";
 
 function repo(files: Record<string, string>, tag = false): string {
   const root = mkdtempSync(join(tmpdir(), "vqm-"));
@@ -323,4 +323,14 @@ test("configuration basics: the tool's own source does not read as a secret", ()
   const src = readFileSync(new URL("../../src/checks/basics.ts", import.meta.url), "utf8");
   const r = configurationBasics(repo({ "package.json": "{}\n", "package-lock.json": "{}\n", "src/basics.ts": src }, true));
   assert.doesNotMatch(r.evidence, /secret/i);
+});
+
+test("configuration basics: a local working tag never pushed is not a release; 'not yet released' then needs no tag", () => {
+  const note = "Not yet released: nothing is published on KDP so far.";
+  assert.ok(releaseTags(["baseline-2026-10-28"], [], note).ok, "an unpushed baseline tag plus the note is met");
+  assert.match(releaseTags(["baseline-2026-10-28"], [], undefined).problem ?? "", /none pushed to the host/);
+  assert.match(releaseTags([], null, undefined).problem ?? "", /no release tags/);
+  assert.ok(releaseTags([], null, note).ok);
+  assert.match(releaseTags(["v1.0.0"], ["v1.0.0"], note).ok ?? "", /1 release tag\(s\), pushed/);
+  assert.match(releaseTags(["kdp-2026-11-04"], null, undefined).ok ?? "", /none looks like a version/);
 });

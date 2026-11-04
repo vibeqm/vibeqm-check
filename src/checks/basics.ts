@@ -500,6 +500,18 @@ function reviewedExceptions(root: string, files: string[]): (f: string) => boole
   return (f) => ignored.has(f) || patterns.some((re) => re.test(f));
 }
 
+/** Release tags (DEC-147): tagged and pushed, or nothing released yet and the
+ *  repository says so. A local working tag (a baseline, say) that never reached the
+ *  host is not a release. `remote` is the host's tag list, or null when unknown. */
+export function releaseTags(tags: string[], remote: string[] | null, notLive: string | undefined): { ok?: string; problem?: string } {
+  const versions = tags.filter((t) => /^v?\d+(\.\d+)+/.test(t));
+  const unpushed = tags.length > 0 && !!remote && !tags.some((t) => remote.includes(t));
+  if ((!tags.length || unpushed) && notLive) return { ok: `no release tags ${unpushed ? "pushed " : ""}yet, and the repository says nothing is released: "${notLive.trim().slice(0, 60)}" (tag the first release)` };
+  if (!tags.length) return { problem: 'no release tags (if nothing is released yet, say so in the rules file or the README: "nothing is live yet")' };
+  if (unpushed) return { problem: `${tags.length} release tag(s) here, none pushed to the host` };
+  return { ok: `${tags.length} release tag(s)${remote ? ", pushed" : ""}${versions.length ? "" : " (none looks like a version, e.g. v1.2.0)"}` };
+}
+
 export function configurationBasics(root: string): CheckResult {
   const files = tracked(root);
   const gate = "Configuration basics";
@@ -513,14 +525,12 @@ export function configurationBasics(root: string): CheckResult {
   }
   const tags = (git(root, ["tag", "--list"]) ?? "").split("\n").filter(Boolean);
   const remote = tags.length ? hostTags(root) : null;
-  const versions = tags.filter((t) => /^v?\d+(\.\d+)+/.test(t));
   // Nothing released yet, said in the rules file or the README, needs no tag (DEC-147);
   // the first release is tagged. A template's blank is a choice, not a statement.
   const notLive = [...RULES_FILES, "README.md"].map((f) => read(root, f).split("\n").find((l) => NOT_LIVE.test(l) && !placeholders(l).length)).find(Boolean);
-  if (!tags.length && notLive) ok.push(`no release tags yet, and the repository says nothing is released: "${notLive.trim().slice(0, 60)}" (tag the first release)`);
-  else if (!tags.length) problems.push("no release tags (if nothing is released yet, say so in the rules file or the README: \"nothing is live yet\")");
-  else if (remote && !tags.some((t) => remote.includes(t))) problems.push(`${tags.length} release tag(s) here, none pushed to the host`);
-  else ok.push(`${tags.length} release tag(s)${remote ? ", pushed" : ""}${versions.length ? "" : " (none looks like a version, e.g. v1.2.0)"}`);
+  const release = releaseTags(tags, remote, notLive);
+  if (release.ok) ok.push(release.ok);
+  if (release.problem) problems.push(release.problem);
   const found = files.filter((f) => !/\.(png|jpe?g|gif|pdf|zip|lock|woff2?)$/i.test(f)).filter((f) => SECRET.test(read(root, f)));
   // A repository's allowlist is its own claim, so it only excuses files under test
   // folders: an allowlist of ".*" or "config/" must not hide a live credential.
