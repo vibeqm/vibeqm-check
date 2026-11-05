@@ -172,8 +172,13 @@ export function dataBoundary(root: string): CheckResult {
 export function aiBudget(root: string): CheckResult {
   const gate = "AI budget";
   const re = /\b(AI|model|token|API|LLM)\b[^\n]{0,80}\bbudget\b|\bbudget\b[^\n]{0,80}\b(AI|model|token|API|LLM)\b/i;
-  const hit = mdFiles(vibeqm(root)).find((p) => re.test(readFileSync(p, "utf8")));
-  if (hit) return r3(gate, "met", `${relative(root, hit)} states an AI budget (check it says where the limit is enforced and who is told)`);
+  const named = mdFiles(vibeqm(root)).filter((p) => re.test(readFileSync(p, "utf8")));
+  // A heading is not a budget: the file must state a limit and who is told when it is reached.
+  const limit = /\d[^\n]{0,40}\b(a month|per month|monthly|per task|a task|per day|a day)\b|\b(monthly|per-task|daily)\b[^\n]{0,40}\d/i;
+  const told = /\b(told|notif\w*|alert\w*|email\w*|warn\w*)\b/i;
+  const hit = named.find((p) => limit.test(readFileSync(p, "utf8")) && told.test(readFileSync(p, "utf8")));
+  if (hit) return r3(gate, "met", `${relative(root, hit)} states an AI budget with its limit and who is told (check where the limit is enforced)`);
+  if (named.length) return r3(gate, "not-met", `${relative(root, named[0]!)} mentions an AI budget but not both the limit (an amount a month or a task) and who is told when it is reached`);
   return r3(gate, existsSync(vibeqm(root)) ? "not-met" : "not-visible", "no AI budget: a monthly or per-task limit, where it is enforced, and who is told when it is reached");
 }
 

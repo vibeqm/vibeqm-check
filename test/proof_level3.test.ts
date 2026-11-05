@@ -104,6 +104,8 @@ test("AI budget: met when VibeQM/ states one, not met when it only names a budge
   mkdirSync(join(root, "VibeQM"));
   writeFileSync(join(root, "VibeQM", "STANDARD.md"), "# Standard\nThe marketing budget is set by the owner.\n");
   assert.equal(aiBudget(root).status, "not-met");
+  writeFileSync(join(root, "VibeQM", "AI_BUDGET.md"), "# AI budget\n");
+  assert.equal(aiBudget(root).status, "not-met", "a bare heading is not a budget");
   writeFileSync(join(root, "VibeQM", "AI_BUDGET.md"), "# AI budget\nThe AI budget is $50 a month, capped in the provider console; the owner is emailed at 80%.\n");
   assert.equal(aiBudget(root).status, "met");
   assert.equal(aiBudget(mkdtempSync(join(tmpdir(), "vqm-"))).status, "not-visible");
