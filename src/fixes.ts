@@ -49,6 +49,8 @@ const NEEDS: Record<string, Needs> = {
   "Critical rules enforced": "answer",
   "Risk classes and peer review by risk": "answer",
   "Data boundary": "answer",
+  "AI budget": "answer",
+  "Guardrail changes approved": "host",
   "Reviewer proven": "answer",
   "Service-bound items (applicability)": "answer",
 };
@@ -442,10 +444,28 @@ const FIXES: Record<string, (r: CheckResult) => FixBody> = {
     verify: RERUN,
     minutes: 15,
   }),
+  "AI budget": () => ({
+    why: "Autonomy without a spending limit is an open tab with an AI company.",
+    steps: [
+      "Ask the person for the budget: a monthly or per-task limit on AI spending, where it is enforced (the provider's spending cap, a key's limit, a plan) and who is told when it is reached.",
+      "Write it in `VibeQM/` (the standard, or `VibeQM/AI_BUDGET.md`).",
+    ],
+    verify: RERUN,
+    minutes: 10,
+  }),
+  "Guardrail changes approved": () => ({
+    why: "An agent that can rewrite its own rules, hooks or CI can switch off the checks that hold it.",
+    steps: [
+      "Require a person's approval for changes to the rules files, `.githooks/`, `.github/workflows/` and agent settings: a CODEOWNERS entry with required review, or for one person an ask rule on those paths in the agent's settings.",
+      "Record it in `vqm-proof.json` (gate \"Guardrail changes approved\"), with a recent change that went through it.",
+    ],
+    verify: RERUN,
+    minutes: 15,
+  }),
   "Agent plug-ins and tools": () => ({
     why: "Plug-ins and tool servers run with the agent's permissions; they are dependencies.",
     steps: [
-      "List the MCP servers, plug-ins and outside skills in use (`.mcp.json`, settings), pin their versions, and note who approved each.",
+      "List the MCP servers, plug-ins and outside skills in use (`.mcp.json`, settings), pin them to a commit hash or checksum where the source offers one (a version tag can be moved), else an exact version, and note who approved each.",
       "Record the list in `vqm-proof.json` (gate \"Agent plug-ins and tools\").",
     ],
     verify: RERUN,

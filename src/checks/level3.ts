@@ -169,6 +169,14 @@ export function dataBoundary(root: string): CheckResult {
   return r3(gate, existsSync(vibeqm(root)) ? "not-met" : "not-visible", "no written data boundary: which code and data may go to which AI company");
 }
 
+export function aiBudget(root: string): CheckResult {
+  const gate = "AI budget";
+  const re = /\b(AI|model|token|API|LLM)\b[^\n]{0,80}\bbudget\b|\bbudget\b[^\n]{0,80}\b(AI|model|token|API|LLM)\b/i;
+  const hit = mdFiles(vibeqm(root)).find((p) => re.test(readFileSync(p, "utf8")));
+  if (hit) return r3(gate, "met", `${relative(root, hit)} states an AI budget (check it says where the limit is enforced and who is told)`);
+  return r3(gate, existsSync(vibeqm(root)) ? "not-met" : "not-visible", "no AI budget: a monthly or per-task limit, where it is enforced, and who is told when it is reached");
+}
+
 const notVisible = (gate: string, need: string) => (_root: string) => r3(gate, "not-visible", need);
 
 export const level3 = [
@@ -184,7 +192,9 @@ export const level3 = [
   lessonsRecorded,
   notVisible("Gates proven", "needs a record of each automated Level 2–3 check catching a planted fault; attach proof"),
   dataBoundary,
-  notVisible("Agent plug-ins and tools", "outside plug-ins, tool servers and skills must be pinned and added as high-risk changes; attach proof"),
+  aiBudget,
+  notVisible("Guardrail changes approved", "every change to rules files, hooks, CI configuration and agent settings needs a person's approval; attach proof"),
+  notVisible("Agent plug-ins and tools", "outside plug-ins, tool servers and skills must be pinned (to a commit hash or checksum where the source offers one) and added as high-risk changes; attach proof"),
   notVisible("Parallel agents and rollback", "agents on separate branches through the same checks, and a tried rollback; attach proof"),
   notVisible("Generated-code licensing", "a license check on new code; attach proof"),
   notVisible("Reviewer proven", "the AI peer reviewer's model and version need a record of catching a planted-fault set (at least five known-bad changes, including a weakened test and a prompt-injection case), kept where the agent can't edit it; attach proof"),

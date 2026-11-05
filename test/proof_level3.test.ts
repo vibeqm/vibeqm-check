@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { lessonsRecorded, provenance, rulesShort } from "../src/checks/level3.js";
+import { aiBudget, lessonsRecorded, provenance, rulesShort } from "../src/checks/level3.js";
 import { applyProofs, findProofFile, loadProofs } from "../src/proof.js";
 import type { CheckResult } from "../src/types.js";
 
@@ -97,4 +97,14 @@ test("proofs: a repo file adds to a parent file, and the nearest wins per gate",
   assert.equal(proofs.length, 2);
   assert.equal(proofs.find((p) => p.gate === "Peer review on every change")?.evidence, "repo");
   assert.equal(proofs.find((p) => p.gate === "Checks seen to fail")?.evidence, "parent");
+});
+
+test("AI budget: met when VibeQM/ states one, not met when it only names a budget for something else", () => {
+  const root = repo();
+  mkdirSync(join(root, "VibeQM"));
+  writeFileSync(join(root, "VibeQM", "STANDARD.md"), "# Standard\nThe marketing budget is set by the owner.\n");
+  assert.equal(aiBudget(root).status, "not-met");
+  writeFileSync(join(root, "VibeQM", "AI_BUDGET.md"), "# AI budget\nThe AI budget is $50 a month, capped in the provider console; the owner is emailed at 80%.\n");
+  assert.equal(aiBudget(root).status, "met");
+  assert.equal(aiBudget(mkdtempSync(join(tmpdir(), "vqm-"))).status, "not-visible");
 });
