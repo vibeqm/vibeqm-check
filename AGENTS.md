@@ -27,5 +27,6 @@ Notes for AI coding agents (and people) working on this repository.
   template. Wait for CI (`test-and-check`, `security`) to pass and every review thread
   to be resolved; merge with a merge commit (`gh pr merge --merge --delete-branch`)
   only after the person confirms in the session. Tag a release on `main` after the
-  merge, never before; the author publishes to npm.
+  merge, never before; the author publishes to npm. The ruleset lives on GitHub; its settings are
+  recorded in `.github/rulesets/protect-main.json` (update the file when it changes).
 - Keep this file under 200 lines.
