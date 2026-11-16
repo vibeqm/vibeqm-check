@@ -27,6 +27,11 @@ Notes for AI coding agents (and people) working on this repository.
   template. Wait for CI (`test-and-check`, `security`) to pass and every review thread
   to be resolved; merge with a merge commit (`gh pr merge --merge --delete-branch`)
   only after the person confirms in the session. Tag a release on `main` after the
-  merge, never before; the author publishes to npm. The ruleset lives on GitHub; its settings are
+  merge, never before; the author publishes to npm.
+  On the maintainer's machine every push is peer reviewed by a model from another company
+  and leaves a record in `reviews/push/`: commit that record to the same branch and push
+  again (a push that only adds review records is not reviewed again) before opening or
+  merging the pull request. Fetch `origin` first, so a new branch is compared with the
+  current `main`. The ruleset lives on GitHub; its settings are
   recorded in `.github/rulesets/protect-main.json` (update the file when it changes).
 - Keep this file under 200 lines.
