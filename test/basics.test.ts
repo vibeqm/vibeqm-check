@@ -44,6 +44,16 @@ test("configuration basics: a committed private key is caught (planted fault)", 
   assert.match(r.evidence, /possible secrets committed in key\.txt/);
 });
 
+test("configuration basics: a URL slug with 'risk-' is not a key; a real-looking sk- key is", () => {
+  const slug = "See https://example.com/blog/ai-risk-what-government-contractors-need-to-know\n";
+  const r = configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}", "notes.md": slug }, true));
+  assert.equal(r.status, "met");
+  const key = "OPENAI_API_KEY=" + "sk-" + "proj-4fK9xQ2mZ7vB1nR8tY3wL6pD0sH5jC2a\n"; // split so this file holds no key
+  const k = configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}", "env.txt": key }, true));
+  assert.equal(k.status, "not-met");
+  assert.match(k.evidence, /possible secrets committed in env\.txt/);
+});
+
 test("diagrams: a mermaid block counts", () => {
   assert.equal(diagrams(repo({})).status, "not-met");
   assert.equal(diagrams(repo({ "docs/flow.md": "```mermaid\ngraph TD; A-->B\n```\n" })).status, "met");

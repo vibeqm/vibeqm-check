@@ -458,7 +458,10 @@ export function devApartFromProd(root: string): CheckResult {
 }
 
 // The dashes are counted ({5}) so this file does not hold a key header and flag itself.
-const SECRET = /-{5}BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-{5}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk-[A-Za-z0-9_-]{32,}|xox[baprs]-[A-Za-z0-9-]{10,}/;
+// A key prefix must start a token (not "risk-…" in a URL slug), and an sk- key must hold a
+// digit: "sk-what-government-contractors-need-to-know" is a slug, not an OpenAI key.
+const SECRET =
+  /-{5}BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-{5}|(?<![A-Za-z0-9_-])(?:AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk-(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{32,}|xox[baprs]-[A-Za-z0-9-]{10,})/;
 const LOCKS: Record<string, string[]> = {
   "package.json": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock"],
   "pyproject.toml": ["poetry.lock", "uv.lock", "pdm.lock", "requirements.txt"],
