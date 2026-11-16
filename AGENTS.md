@@ -21,4 +21,7 @@ Notes for AI coding agents (and people) working on this repository.
 - The Level 2 templates in `templates/level-2/` come from the companion repository:
   edit them there, then run `scripts/sync-templates.sh` (it bundles `.gitignore` as
   `gitignore`, since npm drops .gitignore files).
+- `main` is protected for everyone, the maintainer included: every change arrives as a
+  pull request from a branch and merges after CI passes; the agent merges only after the
+  person confirms in the session.
 - Keep this file under 200 lines.
