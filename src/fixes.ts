@@ -102,7 +102,7 @@ const FIXES: Record<string, (r: CheckResult) => FixBody> = {
       "Once the review runs, the gate reads In place and counts after 10 reviewed changes: the count looks for a habit, not a setup, so your next pushes are the evidence. One pushed change without a review restarts the count, and the hook is per clone: enable it on every machine you push from.",
       PROOF("Peer review on every change"),
     ],
-    verify: "Run `vibeqm-check` again; the gate should read In place, with the count of reviewed changes so far. It reads Met at 20.",
+    verify: "Run `vibeqm-check` again; the gate should read In place, with the count of reviewed changes so far. It reads Met at 10 (a habit of peer review, not a setup).",
     minutes: 30,
   }),
   "Verification on every change": () => ({

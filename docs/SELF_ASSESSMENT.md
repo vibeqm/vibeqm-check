@@ -38,7 +38,7 @@ Verify: Run `vibeqm-check` again; the gate should read Met.
 
 ### Provenance: Not met (~10 min; your AI agent can do it)
 
-Found: 0 of 22 sampled commits name a model and version in a trailer (e.g. "Model: claude-opus-5-5")
+Found: 0 of 23 sampled commits name a model and version in a trailer (e.g. "Model: claude-opus-5-5")
 
 Why: When a bug appears, you need to know which model and version wrote that code.
 
@@ -353,19 +353,19 @@ _Already set up another repository with vibeqm-check? Reuse it: your agent can c
 | 2 | Agent rules file | Met | AGENTS.md (25 lines) |
 | 2 | Version control + merge path | Met | one author in the sample; changes reach the main branch behind the committed blocking pre-commit hook (.githooks/pre-commit), `--no-verify` denied in .claude/settings.json, recorded as tailoring in tailoring/TAILORING.md (TLR-001): the accepted equivalent of pull requests for a one-person repository |
 | 2 | Checks before merge | Met | CI workflows: self-check.yml; blocking git hook pre-commit runs `make check`: committed in the repository (.githooks/pre-commit); each clone enables it with `git config core.hooksPath`; blocking git hook pre-push runs `make check`: committed in the repository (.githooks/pre-push); each clone enables it with `git config core.hooksPath` |
-| 2 | Small batches | Met | median 36.5 changed lines per commit over the last 22 commits (limit 400) |
+| 2 | Small batches | Met | median 41 changed lines per commit over the last 23 commits (limit 400) |
 | 2 | Agent permissions | Met | 27 deny rules in .claude/settings.json; also 15 deny rules in ~/.claude/settings.json (this machine only) |
-| 2 | Owner per change | Met | all 22 sampled commits have a human author: Eduardo Sanchez <581165+edsanz@users.noreply.github.com>; 5 of them written with an AI agent (per their trailers), owned by that author |
+| 2 | Owner per change | Met | all 23 sampled commits have a human author: Eduardo Sanchez <581165+edsanz@users.noreply.github.com>; 5 of them written with an AI agent (per their trailers), owned by that author |
 | 2 | Checks seen to fail | Met (attested) | attested by Eduardo Sanchez, 2026-11-16 (docs/DRILLS.md): Planted-fault drill: inverted a unit test in test/basics.test.ts and committed it; the committed pre-commit hook ran make check and refused the commit. Earlier drill 2026-10-10, same result. |
 | 2 | Requirements first | Met | requirements or issue templates in the repository: requirements/README.md. Whether each change traces to one is a judgment question of the full assessment |
-| 2 | Peer review on every change | Met | since review began (64bcb59, 2026-10-21), 16 of 16 pushed changes were covered by a review (a push review, a reviewed pull request, or a trailer with a review record); earlier history is not claimed |
+| 2 | Peer review on every change | Met | since review began (64bcb59, 2026-10-21), 16 of 16 pushed changes were covered by a review (1 not pushed yet, due at the next push) (a push review, a reviewed pull request, or a trailer with a review record); earlier history is not claimed |
 | 2 | Verification on every change | Met | linter or static-analysis configuration: biome.json, tsconfig strict mode, `biome lint` runs in a hook or CI; a hook or CI job runs `biome lint` (that a failure blocks the change is the "Checks before merge" gate) |
-| 2 | Security review before push | Met | secret scanning: gitleaks; security review of each change (an AI review or static security analysis): semgrep; dependency scan: none |
+| 2 | Security review before push | Met | secret scanning: gitleaks; security review of each change (an AI review or static security analysis): semgrep; dependency scan: npm audit (whether it blocks on critical findings is a CI or host setting, not checked) |
 | 2 | Development apart from production | Met | environments: a note: docs/DEV_AND_PRODUCTION.md; confirmation before publishing live: publish commands that stop for the person or are refused in .claude/settings.json: Bash(npm publish*), Bash(npm unpublish*), Bash(npx npm publish*)… |
-| 2 | Configuration basics | Met | package.json → package-lock.json; 12 release tag(s), pushed |
+| 2 | Configuration basics | Met | package.json → package-lock.json; 13 release tag(s), pushed |
 | 3 | One written standard | Not visible | no VibeQM/ folder; if the standard lives elsewhere (a shared standards repo), attach proof |
 | 3 | Standard is followed | Not visible | needs an audit or check that can fail (script, CI job, enforced checklist) and its record; attach proof |
-| 3 | Provenance | Not met | 0 of 22 sampled commits name a model and version in a trailer (e.g. "Model: claude-opus-5-5") |
+| 3 | Provenance | Not met | 0 of 23 sampled commits name a model and version in a trailer (e.g. "Model: claude-opus-5-5") |
 | 3 | Preflight beyond green builds | Not visible | needs a gate that inspects real output (rendered pages, artifacts, smoke tests); attach proof |
 | 3 | Documentation standard | Not visible | no VibeQM/ folder; documents kept elsewhere need a tailoring record (attach proof) |
 | 3 | Critical rules enforced | Not visible | enforcement exists (27 deny rules in .claude/settings.json; 15 deny rules in ~/.claude/settings.json; git hooks at .githooks), but the mapping from each critical rule (covering every high-risk category) to its enforcement must be shown; attach proof |
@@ -409,7 +409,7 @@ Fix the gaps below in order: your own items first, then the person's, cheapest f
    - Note the pinned model in the model register (`VibeQM/`), and switch only after running your own checks on the new one.
    - Verify: Run `vibeqm-check` again; the gate should read Met.
 2. Provenance (~10 min; your AI agent can do it). When a bug appears, you need to know which model and version wrote that code.
-   - Found: 0 of 22 sampled commits name a model and version in a trailer (e.g. "Model: claude-opus-5-5")
+   - Found: 0 of 23 sampled commits name a model and version in a trailer (e.g. "Model: claude-opus-5-5")
    - Claude Code: set `"attribution": {"commit": "Model: <model id with version, e.g. claude-opus-5-5>"}` in `.claude/settings.json`, so every agent commit carries the trailer automatically.
    - Add a `commit-msg` hook that rejects commits without a `Model:` trailer (human-only commits can use `Model: none`).
    - Name the reviewing model too when another model reviewed the change (`Reviewed-by-model:`).

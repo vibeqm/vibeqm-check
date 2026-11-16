@@ -40,3 +40,5 @@ jobs:
       - name: semgrep 1.180.0, pinned (static security analysis)
         run: |
           pipx run --spec "semgrep==1.180.0" semgrep scan --config p/typescript --config p/nodejs --error --metrics=off src
+      - name: dependency vulnerability scan (fails on critical findings)
+        run: npm audit --audit-level=critical

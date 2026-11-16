@@ -147,7 +147,7 @@ const VENDORS: [RegExp, string][] = [
 ];
 const vendorOf = (s: string) => VENDORS.find(([re]) => re.test(s))?.[1];
 const REVIEW_PATH = /(^|\/)reviews?\/.+\.(md|txt)$/i;
-const MIN_SINCE = 10; // changes after adoption before review coverage counts
+const MIN_SINCE = 10; // changes after adoption before review coverage counts (framework v0.4.9, DEC-166: was 20)
 
 /** Peer review on every change. A change counts as reviewed when it carries a
  * `Reviewed-by:` trailer naming a person ("Name <email>") or a model from a company that
