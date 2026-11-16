@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: A question or feedback about the model itself
+    url: https://github.com/vibeqm/vqm/issues
+    about: Levels, gates and rules belong to the model, in vibeqm/vqm.
+  - name: A security problem
+    url: https://github.com/vibeqm/vibeqm-check/security/advisories/new
+    about: Report vulnerabilities privately, never in a public issue.

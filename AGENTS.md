@@ -21,7 +21,11 @@ Notes for AI coding agents (and people) working on this repository.
 - The Level 2 templates in `templates/level-2/` come from the companion repository:
   edit them there, then run `scripts/sync-templates.sh` (it bundles `.gitignore` as
   `gitignore`, since npm drops .gitignore files).
-- `main` is protected for everyone, the maintainer included: every change arrives as a
-  pull request from a branch and merges after CI passes; the agent merges only after the
-  person confirms in the session.
+- Workflow (the same as `CONTRIBUTING.md`): `main` is protected for everyone, the
+  maintainer included, so never push to it. Work on a branch named for the change, run
+  `make check`, push the branch, and open a pull request with `gh pr create` using the
+  template. Wait for CI (`test-and-check`, `security`) to pass and every review thread
+  to be resolved; merge with a merge commit (`gh pr merge --merge --delete-branch`)
+  only after the person confirms in the session. Tag a release on `main` after the
+  merge, never before; the author publishes to npm.
 - Keep this file under 200 lines.
