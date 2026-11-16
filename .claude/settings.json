@@ -26,6 +26,7 @@
       "Bash(rm -rf /*)",
       "Bash(rm -rf ~*)",
       "Bash(rm -rf ..*)",
+      "Bash(rm -rf .*)",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(**/.env)",
