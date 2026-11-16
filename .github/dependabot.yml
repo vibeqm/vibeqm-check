@@ -1,0 +1,13 @@
+# Dependency alerts and updates (VibeQM Level 2: dependency scan, alongside npm audit in
+# CI): the GitHub Actions the workflows use (pinned to commit hashes) and the npm
+# packages. Each proposal arrives as a pull request and merges only after CI passes.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
