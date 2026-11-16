@@ -152,7 +152,7 @@ export function terminalDetails(results: CheckResult[], proofFile: string | null
   // The to-do list for the next level, cheapest first (the AI prompt's order).
   if (open.length) {
     const review = open.find(({ r }) => r.gate === "Peer review on every change");
-    const wait = review ? (review.r.progress ? `; then ${review.r.progress.needed - review.r.progress.done} more reviewed changes` : "; then 20 reviewed changes") : "";
+    const wait = review ? (review.r.progress ? `; then ${review.r.progress.needed - review.r.progress.done} more reviewed changes` : "; then 10 reviewed changes") : "";
     out.push(p.bold(`TO REACH LEVEL ${next}: ${open.length} item${open.length === 1 ? "" : "s"}, about ${minutes} minutes of setup${wait}`), "");
     open.forEach(({ r, f }, i) => {
       const n = `${i + 1}.`.padEnd(4);

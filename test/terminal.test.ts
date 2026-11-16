@@ -34,11 +34,11 @@ test("the lead says how far the next level is, who does what, and what it earns;
 test("a gate in place counts with use: the lead gives the countdown, the scorecard its own mark", () => {
   const results: CheckResult[] = [
     { level: 2, gate: "Agent rules file", status: "met", evidence: "AGENTS.md" },
-    { level: 2, gate: "Peer review on every change", status: "in-place", evidence: "since review began (abc1234, 2026-10-20), 3 of 3 pushed changes were covered by a review; counts after 20 reviewed changes since adoption, 3 so far", progress: { done: 3, needed: 20, unit: "reviewed changes" } },
+    { level: 2, gate: "Peer review on every change", status: "in-place", evidence: "since review began (abc1234, 2026-10-20), 3 of 3 pushed changes were covered by a review; counts after 10 reviewed changes since adoption, 3 so far", progress: { done: 3, needed: 10, unit: "reviewed changes" } },
   ];
   const out = terminalSummary("/shop", results, "2026-10-30", wide);
-  assert.match(out.replace(/\n/g, " "), /Level 2 is in place: 1 of 2 met, and peer review on every change counts after 20 reviewed changes \(3 so far\)\./);
-  assert.match(out, /Claim: .*Level 2: 1 of 2 items open, peer review on every change in place, 3 of 20 reviewed changes\./);
+  assert.match(out.replace(/\n/g, " "), /Level 2 is in place: 1 of 2 met, and peer review on every change counts after 10 reviewed changes \(3 so far\)\./);
+  assert.match(out, /Claim: .*Level 2: 1 of 2 items open, peer review on every change in place, 3 of 10 reviewed changes\./);
   assert.match(out, /◐ Peer review on every change/);
   assert.match(out, /◐ in place: set up, counts with use/);
   const two = terminalDetails(results, null, wide);
@@ -46,7 +46,7 @@ test("a gate in place counts with use: the lead gives the countdown, the scoreca
   // With one more gate open, the countdown follows the split.
   const mixed = terminalSummary("/shop", [...results, { level: 2, gate: "Small batches", status: "not-met", evidence: "median 900" }], "2026-10-30", wide);
   assert.match(mixed.replace(/\n/g, " "), /Level 2, Guarded, is 1 item away, plus 1 gate that counts with use\./);
-  assert.match(mixed.replace(/\n/g, " "), /1 counts with use \(small batches\)\. Then peer review on every change counts after 20/);
+  assert.match(mixed.replace(/\n/g, " "), /1 counts with use \(small batches\)\. Then peer review on every change counts after 10/);
 });
 
 test("when every fact check of the next level is met, the screen says what puts the level on the scorecard", () => {

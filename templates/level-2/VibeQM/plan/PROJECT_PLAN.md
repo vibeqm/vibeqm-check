@@ -1,9 +1,11 @@
 # Plan
 
 ## Goal
+
 <One or two lines: what this project delivers, and for whom.>
 
 ## Scope
+
 - In: <...>
 - Out: <...>
 

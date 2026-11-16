@@ -78,7 +78,7 @@ that still has blanks. The templates come from the
     GitHub CLI logged in, the tool reads branch protection and required checks
     itself.
   - **In place:** the practice is set up and recorded but counts with use (peer
-    review counts after 20 reviewed changes; one unreviewed push restarts the count).
+    review counts after 10 reviewed changes; one unreviewed push restarts the count).
     The result shows the count, so you see when it will be met.
 - **For every open check:** why it matters, concrete steps for this repository, how to
   confirm it worked, an estimate in minutes, and who it needs: your agent alone, an
@@ -108,7 +108,9 @@ model from another company run locally (for example with Ollama), or a free API 
 A chat subscription alone gives no API a hook can call.
 
 Review is measured from the first reviewed change: earlier history is never claimed as
-reviewed. After 20 changes, all of them reviewed, the check reads **Met**. Any change
+reviewed. After 10 changes, all of them reviewed, the check reads **Met**: the count
+looks for a habit of peer review, not a setup (one reviewed push shows the review
+exists; ten in a row show it happens every time). Any change
 since then without a review reads **Not met**.
 
 ## Proof for what the tool can't see
@@ -145,7 +147,7 @@ that caused it. The report appears on the run's summary page.
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }      # the checks sample history
-- uses: vibeqm/vibeqm-check@v0.4.10
+- uses: vibeqm/vibeqm-check@v0.4.11
   with: { min-level: 2 }        # optional: fail the run below this level
 ```
 
@@ -160,13 +162,13 @@ runs the action on this repository, and the report is on each run's summary page
 ([Actions](https://github.com/vibeqm/vibeqm-check/actions/workflows/self-check.yml)).
 The latest report is committed as [`docs/SELF_ASSESSMENT.md`](docs/SELF_ASSESSMENT.md).
 
-As of 2026-11-16: **12 of 13 Level 2 gates met; peer review on every change is in
-place** (every push since 2026-10-21 was reviewed by a model from another company,
-records in [`reviews/push/`](reviews/push/)), and it counts once 20 reviewed changes
-have followed, so the repository reads Level 1 until then. One maintainer, so a
-committed blocking hook stands in for pull requests
+As of 2026-11-16: **Level 2, self-assessed, all 13 gates met.** Peer review: every
+push since 2026-10-21 was reviewed by a model from another company (records in
+[`reviews/push/`](reviews/push/)); the gate needs 10 reviewed changes in a row because
+it looks for a habit of peer review, not a setup. One maintainer, so a committed
+blocking hook stands in for pull requests
 ([`tailoring/TAILORING.md`](tailoring/TAILORING.md)); planted-fault drills are in
-[`docs/DRILLS.md`](docs/DRILLS.md).
+[`docs/DRILLS.md`](docs/DRILLS.md). Level 3 is next.
 
 ## What it is, and what it is not
 

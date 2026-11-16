@@ -162,12 +162,14 @@ test("peer review: same-company models and unknown names that are not a person d
   }
 });
 
-test("peer review: measured from adoption; needs 20 changes, then every one reviewed; one unreviewed push restarts the count", () => {
+test("peer review: measured from adoption; needs 10 changes, then every one reviewed; one unreviewed push restarts the count", () => {
   const few = peerReview(reviewedRepo([{}, GLM, GLM]));
   assert.equal(few.status, "in-place");
-  assert.match(few.evidence, /since review began \([0-9a-f]+, [0-9-]+\), 2 of 2 pushed changes were covered by a review; counts after 20 reviewed changes since adoption, 2 so far/);
-  assert.deepEqual(few.progress, { done: 2, needed: 20, unit: "reviewed changes" });
-  const enough = peerReview(reviewedRepo([{}, ...Array(20).fill({ trailer: "Reviewed-by: A. Person <a@example.com>", record: true })]));
+  assert.match(few.evidence, /since review began \([0-9a-f]+, [0-9-]+\), 2 of 2 pushed changes were covered by a review; counts after 10 reviewed changes since adoption, 2 so far/);
+  assert.deepEqual(few.progress, { done: 2, needed: 10, unit: "reviewed changes" });
+  const person = { trailer: "Reviewed-by: A. Person <a@example.com>", record: true };
+  assert.equal(peerReview(reviewedRepo([{}, ...Array(9).fill(person)])).status, "in-place");
+  const enough = peerReview(reviewedRepo([{}, ...Array(10).fill(person)]));
   assert.equal(enough.status, "met");
   // An unreviewed change in the middle restarts the count at the next reviewed one, and is named.
   const gap = peerReview(reviewedRepo([GLM, {}, GLM]));

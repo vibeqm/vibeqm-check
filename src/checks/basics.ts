@@ -147,7 +147,7 @@ const VENDORS: [RegExp, string][] = [
 ];
 const vendorOf = (s: string) => VENDORS.find(([re]) => re.test(s))?.[1];
 const REVIEW_PATH = /(^|\/)reviews?\/.+\.(md|txt)$/i;
-const MIN_SINCE = 20; // changes after adoption before review coverage counts
+const MIN_SINCE = 10; // changes after adoption before review coverage counts
 
 /** Peer review on every change. A change counts as reviewed when it carries a
  * `Reviewed-by:` trailer naming a person ("Name <email>") or a model from a company that
@@ -155,7 +155,7 @@ const MIN_SINCE = 20; // changes after adoption before review coverage counts
  * or a tracked review file naming the commit or a range that holds it. A merged pull
  * request with an independent review on the host also counts, and so does a push-review
  * record with a passing verdict by a model from another company. Review is measured from the
- * first reviewed change in the sample (adoption), once 20 changes have followed it;
+ * first reviewed change in the sample (adoption), once 10 changes have followed it;
  * commits that only add review records need no review of their own. */
 export function peerReview(root: string): CheckResult {
   const gate = "Peer review on every change";
@@ -242,7 +242,7 @@ export function peerReview(root: string): CheckResult {
   const head = `since review began (${first.short}, ${first.date})${restart}, ${since.length} of ${since.length} pushed changes were covered by a review${waiting ? ` (${waiting} not pushed yet, due at the next push)` : ""}`;
   if (since.length < MIN_SINCE) {
     // Review is set up and every pushed change since has one: the gate is in place
-    // and counts once 20 reviewed changes have followed adoption (ASSESSOR §2, DEC-087).
+    // and counts once 10 reviewed changes have followed adoption (ASSESSOR §2, DEC-087, DEC-166).
     return {
       ...r(2, gate, "in-place", `${head}; counts after ${MIN_SINCE} reviewed changes since adoption, ${since.length} so far; one unreviewed push restarts the count (earlier history needs proof)`),
       progress: { done: since.length, needed: MIN_SINCE, unit: "reviewed changes" },
