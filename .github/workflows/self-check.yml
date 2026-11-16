@@ -19,7 +19,8 @@ jobs:
         uses: ./
       - run: test -n "${{ steps.vqm.outputs.level }}"
       - name: the action read the host (CI runs, branch rules or pull requests; a gate attested by proof no longer shows its host evidence, so the whole report is searched)
-        run: node -e 'const t=JSON.stringify(require(process.env.RUNNER_TEMP+"/vqm-report.json").results); const m=t.match(/[^"]*(read from the host|CI run in the default branch.s last \d+ runs)[^"]*/); console.log(m ? m[0] : "no host evidence in the report"); process.exit(m ? 0 : 1)'
+        run: |
+          node -e 'const t=JSON.stringify(require(process.env.RUNNER_TEMP+"/vqm-report.json").results); const m=t.match(/[^"]*(read from the host|CI run in the default branch.s last \d+ runs)[^"]*/); console.log(m ? m[0] : "no host evidence in the report"); process.exit(m ? 0 : 1)'
   security:
     # VibeQM Level 2: secret scanning and static security analysis on every change.
     # Read-only token; gitleaks verified against its published checksum, semgrep
