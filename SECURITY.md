@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please report security problems privately, not in a public issue: use
-**[Report a vulnerability](../../security/advisories/new)** on this repository's
+**[Report a vulnerability](https://github.com/vibeqm/vibeqm-check/security/advisories/new)** on this repository's
 Security tab (GitHub's private vulnerability reporting). Include what you found, how to
 reproduce it, and what it could let someone do.
 
