@@ -52,6 +52,12 @@ test("configuration basics: a URL slug with 'risk-' is not a key; a real-looking
   const k = configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}", "env.txt": key }, true));
   assert.equal(k.status, "not-met");
   assert.match(k.evidence, /possible secrets committed in env\.txt/);
+  // A key with no digit is still caught (push review of c35a2a7).
+  const noDigit = "KEY=" + "sk-" + "abcDEFghiJKLmnoPQRstuVWXyzaBCDefgHIJ\n";
+  assert.equal(configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}", "k.txt": noDigit }, true)).status, "not-met");
+  // A slug that starts the token is still a slug.
+  const bare = "/sk-" + "what-government-contractors-need-to-know\n";
+  assert.equal(configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}", "n.md": bare }, true)).status, "met");
 });
 
 test("diagrams: a mermaid block counts", () => {
