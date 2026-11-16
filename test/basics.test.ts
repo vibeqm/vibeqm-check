@@ -55,9 +55,9 @@ test("configuration basics: a URL slug with 'risk-' is not a key; a real-looking
   // A key with no digit is still caught (push review of c35a2a7).
   const noDigit = "KEY=" + "sk-" + "abcDEFghiJKLmnoPQRstuVWXyzaBCDefgHIJ\n";
   assert.equal(configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}", "k.txt": noDigit }, true)).status, "not-met");
-  // A slug that starts the token is still a slug.
-  const bare = "/sk-" + "what-government-contractors-need-to-know\n";
-  assert.equal(configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}", "n.md": bare }, true)).status, "met");
+  // An all-lowercase key that starts a token is still caught: only the prefix's position changed.
+  const lower = "/" + "sk-" + "abcdefghijklmnopqrstuvwxyzabcdefghij\n";
+  assert.equal(configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}", "n.md": lower }, true)).status, "not-met");
 });
 
 test("diagrams: a mermaid block counts", () => {
