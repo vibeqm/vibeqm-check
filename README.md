@@ -153,6 +153,21 @@ To let the action read the repository's CI runs, pull requests and branch rules,
 give the job read access (`permissions: { contents: read, actions: read, pull-requests: read }`).
 Pass `offline: true` to read the repository only.
 
+## We run it on ourselves
+
+This repository is assessed by its own tool on every push: the `self-check` workflow
+runs the action on this repository, and the report is on each run's summary page
+([Actions](https://github.com/vibeqm/vibeqm-check/actions/workflows/self-check.yml)).
+The latest report is committed as [`docs/SELF_ASSESSMENT.md`](docs/SELF_ASSESSMENT.md).
+
+As of 2026-11-16: **12 of 13 Level 2 gates met; peer review on every change is in
+place** (every push since 2026-10-21 was reviewed by a model from another company,
+records in [`reviews/push/`](reviews/push/)), and it counts once 20 reviewed changes
+have followed, so the repository reads Level 1 until then. One maintainer, so a
+committed blocking hook stands in for pull requests
+([`tailoring/TAILORING.md`](tailoring/TAILORING.md)); planted-fault drills are in
+[`docs/DRILLS.md`](docs/DRILLS.md).
+
 ## What it is, and what it is not
 
 `vibeqm-check` is the scripted half of the VibeQM assessment procedure: the facts a command
