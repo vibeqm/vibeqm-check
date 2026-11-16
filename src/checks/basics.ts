@@ -563,7 +563,7 @@ export function diagrams(root: string): CheckResult {
   const gate = "Requirement visualizations";
   const all = [...mmd, ...inMd];
   if (all.length) return r(3, gate, "met", `diagrams in the repository: ${all.slice(0, 3).join(", ")}${all.length > 3 ? "…" : ""} (that they are current is a judgment)`);
-  return r(3, gate, "not-met", "no workflow or architecture diagrams found (Mermaid, PlantUML or draw.io files, or ```mermaid blocks)");
+  return r(3, gate, "not-met", "no workflow or architecture diagrams found (Mermaid, PlantUML or draw.io files, or Mermaid code blocks)");
 }
 
 export function threeEnvironments(root: string): CheckResult {
@@ -591,10 +591,11 @@ export function currency(root: string): CheckResult {
 export function securityEngineering(root: string): CheckResult {
   const files = tracked(root);
   const text = ciText(root, files).toLowerCase();
-  const found = ["codeql", "semgrep", "sonar", "snyk", "trivy", "grype", "osv-scanner", "dependency-review"].filter((x) => text.includes(x));
+  const found = ["codeql", "semgrep", "sonar", "snyk", "trivy", "grype", "osv-scanner", "dependency-review", "npm audit", "pip-audit"].filter((x) => text.includes(x));
   const gate = "Security engineering";
   const sast = found.some((x) => ["codeql", "semgrep", "sonar", "snyk"].includes(x));
-  const deps = found.some((x) => ["snyk", "trivy", "grype", "osv-scanner", "dependency-review"].includes(x));
+  // The same dependency scanners Level 2's security review counts (npm audit, pip-audit included).
+  const deps = found.some((x) => ["snyk", "trivy", "grype", "osv-scanner", "dependency-review", "npm audit", "pip-audit"].includes(x));
   if (sast && deps) return r(3, gate, "not-visible", `scanning in CI: ${found.join(", ")}; threat models for high-risk changes and the secret manager need proof`);
   return r(3, gate, "not-met", `CI lacks ${[!sast && "static analysis (SAST)", !deps && "dependency or container scanning"].filter(Boolean).join(" and ")}${found.length ? ` (found: ${found.join(", ")})` : ""}`);
 }

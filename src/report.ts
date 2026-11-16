@@ -148,7 +148,7 @@ export function lead(results: CheckResult[], cta: string): { headline: string; l
     if (p.host.length) split.push(`${p.host.length} ${p.host.length === 1 ? "is" : "are"} a setting on the code host (${p.host.map(({ r }) => ASKS[r.gate] ?? r.gate.toLowerCase()).join(", ")})`);
     if (p.use.length) split.push(`${p.use.length} count${p.use.length === 1 ? "s" : ""} with use (${p.use.map(({ r }) => r.gate.toLowerCase()).join(", ")})`);
     const sentence = split.join("; ");
-    // Peer review not set up yet still ends in the 20-change count: say so now, not at push 1.
+    // Peer review not set up yet still ends in the 10-change count: say so now, not at push 1.
     const review = todo.find(({ r }) => r.gate === "Peer review on every change");
     const ahead = review ? ` Then peer review counts over your next 10 reviewed changes: Level ${p.next} is met on the 10th, not in this session.` : "";
     lines.push(`${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}${split.length ? "." : ""}${waiting.length ? ` Then ${countdown.join("; ")}.` : ahead}`);
