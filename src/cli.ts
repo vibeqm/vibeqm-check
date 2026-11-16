@@ -3,7 +3,7 @@
 // run the VibeQM fact checks on a repository. vibeqm-check init [path] [--yes]: create the
 // Level 2 template files.
 import { existsSync, statSync, writeFileSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { basename, relative, resolve } from "node:path";
 import { level2 } from "./checks/level2.js";
 import { level3 } from "./checks/level3.js";
 import { basics2, basics3 } from "./checks/basics.js";
@@ -11,7 +11,7 @@ import { fixFor } from "./fixes.js";
 import { NEXT_STEPS, planInit, writeInit } from "./init.js";
 import { offline } from "./host.js";
 import { applyProofs, findProofFiles, mergeProofs } from "./proof.js";
-import { aiPrompt, levelReached, markdown } from "./report.js";
+import { aiPrompt, levelReached, markdown, shareable } from "./report.js";
 import { terminalDetails, terminalSummary } from "./terminal.js";
 import { FRAMEWORK_VERSION } from "./types.js";
 import { createInterface } from "node:readline/promises";
@@ -161,7 +161,8 @@ if (outArg) {
   // over an existing file, so the read-only promise holds on a second run too.
   const target = resolve(outArg);
   try {
-    writeFileSync(target, `${/\.json$/i.test(target) ? jsonOut : markdown(root, results, date, proofFile)}\n`, { flag: "wx" });
+    const body = /\.json$/i.test(target) ? jsonOut.replace(JSON.stringify(root), JSON.stringify(basename(root))) : markdown(root, results, date, proofFile);
+    writeFileSync(target, `${shareable(body, root)}\n`, { flag: "wx" });
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "EEXIST") {
       console.error(`vibeqm-check: ${target} already exists; --out never overwrites. Choose a new name.`);

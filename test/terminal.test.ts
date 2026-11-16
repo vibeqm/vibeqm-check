@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { PRIVACY, showPath } from "../src/report.js";
+import { PRIVACY, shareable, showPath } from "../src/report.js";
 import { terminalDetails, terminalSummary } from "../src/terminal.js";
 import { FRAMEWORK_VERSION, type CheckResult } from "../src/types.js";
 
@@ -154,4 +154,11 @@ test("showPath shortens home paths but not siblings or unrelated paths", () => {
   assert.equal(showPath(join(home, "docs", "drill.md")), "~/docs/drill.md");
   assert.equal(showPath(`${home}2/file`), `${home}2/file`);
   assert.equal(showPath("/opt/elsewhere/report.md"), "/opt/elsewhere/report.md");
+});
+test("a shared report carries no machine layout or account name", () => {
+  const home = homedir();
+  const root = join(home, "code", "app");
+  const text = `rules: ${root}/AGENTS.md; also ${home}/.claude/settings.json; repo ${root}; sibling ${home}2/x`;
+  const out = shareable(text, root);
+  assert.equal(out, `rules: AGENTS.md; also ~/.claude/settings.json; repo .; sibling ${home}2/x`);
 });

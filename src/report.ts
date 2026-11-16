@@ -10,6 +10,18 @@ export const showPath = (s: string) => {
   return s === home || s.startsWith(`${home}/`) || s.startsWith(`${home}\\`) ? `~${s.slice(home.length)}` : s;
 };
 
+/** A report written to a file is for sharing: paths inside the repository become
+ * relative, and the home folder becomes ~, so it carries neither the machine's layout
+ * nor the account name. */
+export function shareable(text: string, root: string): string {
+  const home = homedir();
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let out = text.split(`${root}/`).join("");
+  out = out.replace(new RegExp(`${esc(root)}(?![\\w/.-])`, "g"), ".");
+  if (home && home !== "/") out = out.replace(new RegExp(`${esc(home)}(?=[/\\\\]|$|[^\\w.-])`, "g"), "~");
+  return out;
+}
+
 export const label = (r: CheckResult) =>
   r.status === "met" ? (r.attested ? "Met (attested)" : "Met") : r.status === "not-met" ? "Not met" : r.status === "in-place" ? "In place" : "Not visible";
 

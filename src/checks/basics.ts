@@ -307,8 +307,15 @@ export function securityBeforePush(root: string): CheckResult {
     `security review of each change (an AI review or static security analysis): ${reviewTools.join(", ") || "none"}${note}`,
     `dependency scan: ${depTools.join(", ") || "none"}${depTools.length ? " (whether it blocks on critical findings is a CI or host setting, not checked)" : ""}`,
   ].join("; ");
-  if (hasSecrets && hasReview) return r(2, gate, "met", ev);
-  return r(2, gate, "not-met", `${ev}; missing ${[!hasReview ? "an AI or static security review of each change" : "", !hasSecrets ? "secret scanning" : ""].filter(Boolean).join(" and ")}`);
+  // The spec's Level 2 security review includes a dependency vulnerability scan (VQM_SPEC §6);
+  // a repository with no dependency manifest has nothing to scan.
+  const manifests = files.filter((f) => Object.keys(LOCKS).includes(f) || /(^|\/)requirements[^/]*\.txt$/.test(f));
+  const needsDeps = manifests.length > 0;
+  const hasDeps = depTools.length > 0;
+  const evDeps = needsDeps ? ev : `${ev} (no dependency manifest, so no dependency scan is needed)`;
+  if (hasSecrets && hasReview && (hasDeps || !needsDeps)) return r(2, gate, "met", evDeps);
+  const missing = [!hasReview ? "an AI or static security review of each change" : "", !hasSecrets ? "secret scanning" : "", needsDeps && !hasDeps ? `a dependency vulnerability scan (the repository has ${manifests[0]}; for example npm audit or pip-audit in CI, osv-scanner, or Dependabot alerts)` : ""].filter(Boolean);
+  return r(2, gate, "not-met", `${evDeps}; missing ${missing.join(" and ")}`);
 }
 
 // Development apart from production at Level 2: the repository names a

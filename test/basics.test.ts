@@ -33,6 +33,16 @@ test("security before push: secret scanning plus a review tool is met; one alone
   assert.equal(securityBeforePush(repo({ ".github/workflows/ci.yml": "steps:\n - uses: gitleaks/gitleaks-action\n - uses: github/codeql-action/analyze\n" })).status, "met");
 });
 
+test("security before push: a repository with dependencies also needs a dependency scan", () => {
+  const ci = "steps:\n - uses: gitleaks/gitleaks-action\n - uses: github/codeql-action/analyze\n";
+  const without = securityBeforePush(repo({ "package.json": "{}", ".github/workflows/ci.yml": ci }));
+  assert.equal(without.status, "not-met");
+  assert.match(without.evidence, /missing a dependency vulnerability scan \(the repository has package\.json/);
+  assert.equal(securityBeforePush(repo({ "package.json": "{}", ".github/workflows/ci.yml": ci + " - run: npm audit --audit-level=critical\n" })).status, "met");
+  assert.equal(securityBeforePush(repo({ "package.json": "{}", ".github/workflows/ci.yml": ci, ".github/dependabot.yml": "version: 2\n" })).status, "met");
+  assert.match(securityBeforePush(repo({ ".github/workflows/ci.yml": ci })).evidence, /no dependency manifest, so no dependency scan is needed/);
+});
+
 test("configuration basics: a manifest without a lockfile fails; with lockfile and tag passes", () => {
   assert.equal(configurationBasics(repo({ "package.json": "{}" }, true)).status, "not-met");
   assert.equal(configurationBasics(repo({ "package.json": "{}", "package-lock.json": "{}" }, true)).status, "met");
