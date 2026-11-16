@@ -1,0 +1,11 @@
+{
+  "proofs": [
+    {
+      "gate": "Checks seen to fail",
+      "evidence": "Planted-fault drill: inverted a unit test in test/basics.test.ts and committed it; the committed pre-commit hook ran make check and refused the commit. Earlier drill 2026-10-10, same result.",
+      "by": "Eduardo Sanchez",
+      "date": "2026-11-16",
+      "ref": "docs/DRILLS.md"
+    }
+  ]
+}

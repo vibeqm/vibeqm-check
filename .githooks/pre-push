@@ -1,0 +1,8 @@
+#!/bin/sh
+# VibeQM Level 2: the checks again before anything leaves the machine. Where the
+# author's shared workshop hook sits next to this repository, it runs instead: it adds
+# the AI peer review of every push (a model from another company; records in reviews/push/).
+root=$(git rev-parse --show-toplevel) || exit 1
+shared="$root/../books/tools/git-hooks/pre-push"
+[ -x "$shared" ] && exec "$shared" "$@"
+cd "$root" && make check || { echo "✗ make check failed: push refused."; exit 1; }

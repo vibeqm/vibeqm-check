@@ -1,0 +1,10 @@
+#!/bin/sh
+# VibeQM Level 2 gate, committed so every clone has it (enable once per clone:
+# `git config core.hooksPath .githooks`). It refuses a commit whose checks fail, and
+# for this one-person repository it stands in for pull requests (tailoring TLR-001).
+# Where the author's shared workshop hook sits next to this repository, it runs
+# instead (gitleaks on the staged changes, the linters, then `make check`).
+root=$(git rev-parse --show-toplevel) || exit 1
+shared="$root/../books/tools/git-hooks/pre-commit"
+[ -x "$shared" ] && exec "$shared" "$@"
+cd "$root" && make check || { echo "✗ make check failed: commit refused."; exit 1; }
