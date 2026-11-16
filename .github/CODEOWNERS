@@ -1,0 +1,4 @@
+# Review is requested from the maintainer on every pull request. (The ruleset requires
+# a pull request and passing CI; it cannot require an approval on a one-maintainer
+# repository, since nobody can approve their own pull request.)
+* @edsanz

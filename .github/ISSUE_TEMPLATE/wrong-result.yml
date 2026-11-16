@@ -1,0 +1,25 @@
+name: Wrong result
+description: A gate read met, not met or not visible when it shouldn't have
+labels: ["wrong result"]
+body:
+  - type: input
+    id: gate
+    attributes:
+      label: Which gate
+      placeholder: "Checks before merge"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What the tool said, and what is true
+      description: Paste the gate's line from the report, then say what the repository really has (a file, a setting, a workflow).
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versions
+      placeholder: "vibeqm-check 0.4.11, Node 22, macOS"
+    validations:
+      required: true

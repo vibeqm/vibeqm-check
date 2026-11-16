@@ -165,10 +165,9 @@ The latest report is committed as [`docs/SELF_ASSESSMENT.md`](docs/SELF_ASSESSME
 As of 2026-11-16: **Level 2, self-assessed, all 13 gates met.** Peer review: every
 push since 2026-10-21 was reviewed by a model from another company (records in
 [`reviews/push/`](reviews/push/)); the gate needs 10 reviewed changes in a row because
-it looks for a habit of peer review, not a setup. One maintainer, so a committed
-blocking hook stands in for pull requests
-([`tailoring/TAILORING.md`](tailoring/TAILORING.md)); planted-fault drills are in
-[`docs/DRILLS.md`](docs/DRILLS.md). Level 3 is next.
+it looks for a habit of peer review, not a setup. `main` is protected for everyone,
+the maintainer included: every change arrives as a pull request and merges after CI
+passes. Planted-fault drills are in [`docs/DRILLS.md`](docs/DRILLS.md). Level 3 is next.
 
 ## What it is, and what it is not
 
