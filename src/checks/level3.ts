@@ -231,6 +231,8 @@ export const level3 = [
   modelsPinned,
   rulesShort,
   lessonsRecorded,
+  notVisible("Change request with impact analysis", "every high-risk change needs a change request written before the code (what it touches, what could break, test, rollback), read by the owner, e.g. in VibeQM/changes/CHANGES.md; attach proof"),
+  notVisible("Estimates against actuals", "tasks need an estimate of time and AI cost before the work and the actual after it, e.g. in VibeQM/changes/CHANGES.md; attach proof"),
   notVisible("Gates proven", "needs a record of each automated Level 2–3 check catching a planted fault; attach proof"),
   dataBoundary,
   aiBudget,

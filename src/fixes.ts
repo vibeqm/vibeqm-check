@@ -372,6 +372,24 @@ const FIXES: Record<string, (r: CheckResult) => FixBody> = {
     verify: "Make the next commit and check `git log -1 --format=%(trailers)` shows the trailers. Rerun once the last 20 changes carry them.",
     minutes: 15,
   }),
+  "Change request with impact analysis": () => ({
+    why: "A risky change is cheapest to question before the code exists: what it touches, what could break, and how you would undo it.",
+    steps: [
+      "Add to the rules file: before a high-risk change (login, payments, personal data, deleting data, security settings, deployment, a new dependency), write its row in `VibeQM/changes/CHANGES.md`: what it touches, what could break, the test, the rollback; ask the owner to read it before approving.",
+      PROOF("Change request with impact analysis"),
+    ],
+    verify: RERUN,
+    minutes: 10,
+  }),
+  "Estimates against actuals": () => ({
+    why: "Estimates that are never checked never improve; the actual next to the estimate shows how well the AI plans, and feeds Level 4's numbers.",
+    steps: [
+      "Add to the rules file: before each task, record your estimate of the time and AI cost in `VibeQM/changes/CHANGES.md` (or the pull request); when it is done, record the actual.",
+      PROOF("Estimates against actuals"),
+    ],
+    verify: RERUN,
+    minutes: 10,
+  }),
   "Preflight beyond green builds": () => ({
     why: "Green unit tests don't prove the product works; look at the real output.",
     steps: [

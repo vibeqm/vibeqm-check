@@ -58,5 +58,13 @@ and whether I took your recommendation (when I didn't, my reason).
 
 ## Records
 
-Every commit ends with a trailer naming the model and version that wrote it.
-Decisions go in VibeQM/decisions/DECISIONS.md.
+Every commit ends with trailers: the model and version that wrote it, and
+`Requirement:` (the requirement or issue), `Origin:` (`ai-recommended` when I took
+your recommendation, `person-override` when I chose against it, `person-request`
+when I simply asked) and `Decision:` when a decision governs the change.
+Decisions go in VibeQM/decisions/DECISIONS.md; for a high-risk design choice,
+draft the weighted matrix there and ask me to decide. Before a high-risk change,
+add its row to VibeQM/changes/CHANGES.md (what it touches, what could break, the
+rollback, your estimate), and fill in the actual when it is done. Once a month, add
+a row to VibeQM/metrics/METRICS.md. Keep every VibeQM record in VibeQM/, so an
+assessment finds it.
