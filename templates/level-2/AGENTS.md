@@ -69,3 +69,7 @@ the actual when it is done; for a high-risk change, also write what it touches, 
 could break, the test and the rollback. Once a month, add
 a row to VibeQM/metrics/METRICS.md. Keep every VibeQM record in VibeQM/, so an
 assessment finds it.
+
+VibeQM/plan/PROJECT_PLAN.md: fill it from this file, the README and the build and
+CI files; ask me what they don't say, a few questions at a time, and record my
+answers there. Keep it current when the scope, a milestone or the budget changes.
