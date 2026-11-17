@@ -63,8 +63,9 @@ Every commit ends with trailers: the model and version that wrote it, and
 your recommendation, `person-override` when I chose against it, `person-request`
 when I simply asked) and `Decision:` when a decision governs the change.
 Decisions go in VibeQM/decisions/DECISIONS.md; for a high-risk design choice,
-draft the weighted matrix there and ask me to decide. Before a high-risk change,
-add its row to VibeQM/changes/CHANGES.md (what it touches, what could break, the
-rollback, your estimate), and fill in the actual when it is done. Once a month, add
+draft the weighted matrix there and ask me to decide. Before each task, add its row
+to VibeQM/changes/CHANGES.md with your estimate of the time and AI cost, and fill in
+the actual when it is done; for a high-risk change, also write what it touches, what
+could break, the test and the rollback. Once a month, add
 a row to VibeQM/metrics/METRICS.md. Keep every VibeQM record in VibeQM/, so an
 assessment finds it.
