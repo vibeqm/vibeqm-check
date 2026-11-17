@@ -7,6 +7,8 @@ The index. People and agents read this first. Replace every <...>.
 | Requirements, with acceptance criteria | `requirements/REQUIREMENTS.md` (or the issue tracker: <link>) |
 | Decisions | `decisions/DECISIONS.md` |
 | Plan | `plan/PROJECT_PLAN.md` |
+| High-risk changes: impact, estimate, actual | `changes/CHANGES.md` |
+| Monthly numbers (head start for Level 4) | `metrics/METRICS.md` |
 | Changes to the standard | `tailoring/TAILORING.md` |
 | Proof for what the assessment can't see | `../vqm-proof.json` |
 | Rules for agents | `../AGENTS.md` |
