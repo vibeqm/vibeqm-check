@@ -1,9 +1,11 @@
 # Changes
 
-The agent writes a row here before it starts a high-risk change (login and
+The agent writes a row here before it starts each task: its estimate of the time and
+AI cost, then the actual when it is done. For a high-risk change (login and
 permissions, payments, personal data, deleting data, security settings, deployment,
-a new dependency), and the actual time and cost when it is done. At Level 2 this is
-a head start; at Level 3 every high-risk change needs one. Replace the example row.
+a new dependency) it also fills what the change touches, what could break, the test
+and the rollback; for other tasks those columns can say "—". At Level 2 this is a
+head start; at Level 3 both are required. Replace the example row.
 
 | Change | Requirement | What it touches | What could break | Tested by | Rollback | Estimate (time, AI cost) | Actual |
 |:--|:--|:--|:--|:--|:--|:--|:--|
