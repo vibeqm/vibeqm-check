@@ -147,7 +147,7 @@ that caused it. The report appears on the run's summary page.
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }      # the checks sample history
-- uses: vibeqm/vibeqm-check@v0.4.11
+- uses: vibeqm/vibeqm-check@v0.4.12
   with: { min-level: 2 }        # optional: fail the run below this level
 ```
 

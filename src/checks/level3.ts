@@ -47,6 +47,41 @@ export function provenance(root: string): CheckResult {
   return r3(gate, share >= 0.9 ? "met" : "not-met", evidence);
 }
 
+const TRAILER_SAMPLE = 20; // as the assessor's sample of the last 20 merged changes
+const ORIGINS = ["ai-recommended", "person-override", "person-request"];
+
+/**
+ * Change trailers (VQM_SPEC §6 Level 3, DEC-171): every change on the main branch says
+ * why it was made. `Requirement:` and `Origin:` on every change; `Decision:` on every
+ * `person-override`. The tool sees the trailers; whether each one resolves to a real
+ * requirement or decision record is the assessor's judgment.
+ */
+export function changeTrailers(root: string): CheckResult {
+  const gate = "Change trailers";
+  const out = git(root, ["log", `-${TRAILER_SAMPLE}`, "--no-merges", "--format=%(trailers:only,unfold)%x00"]);
+  // one NUL after each commit, so the last piece is always empty
+  const sample = (out ?? "").split("\0").slice(0, -1).map((b) => b.trim());
+  if (!sample.length) return r3(gate, "not-met", "no commits to sample");
+  const value = (b: string, key: string) => b.match(new RegExp(`^${key}:\\s*(.+)$`, "im"))?.[1]?.trim();
+  let good = 0;
+  let overrides = 0;
+  let overridesWithDecision = 0;
+  for (const b of sample) {
+    const origin = value(b, "Origin")?.toLowerCase();
+    if (origin === "person-override") {
+      overrides++;
+      if (value(b, "Decision")) overridesWithDecision++;
+    }
+    if (value(b, "Requirement") && origin && ORIGINS.includes(origin) && (origin !== "person-override" || value(b, "Decision"))) good++;
+  }
+  const n = sample.length;
+  const evidence =
+    `${good} of ${n} sampled changes carry Requirement: and a valid Origin: (${ORIGINS.join(", ")})` +
+    (overrides ? `; ${overridesWithDecision} of ${overrides} person-override changes name a Decision:` : "") +
+    "; whether each trailer resolves to a real record is a judgment question";
+  return r3(gate, good === n ? "met" : "not-met", evidence);
+}
+
 export function preflight(_root: string): CheckResult {
   return r3("Preflight beyond green builds", "not-visible", "needs a gate that inspects real output (rendered pages, artifacts, smoke tests); attach proof");
 }
@@ -188,6 +223,7 @@ export const level3 = [
   oneWrittenStandard,
   standardIsFollowed,
   provenance,
+  changeTrailers,
   preflight,
   documentationStandard,
   criticalRulesEnforced,

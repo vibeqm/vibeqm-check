@@ -622,7 +622,7 @@ export const basics2 = [requirementsFirst, peerReview, verificationTools, securi
 export const basics3 = [
   nv("Requirements management", "attach proof that requirements trace to design, tests and changes, and that non-functional requirements are stated and tested"),
   diagrams,
-  nv("Decision records with options", "attach the decision records showing options considered, recommendation and choice"),
+  nv("Decision records with options", "attach the decision records showing options considered, recommendation, choice, and whether the recommendation was followed or overruled (with the reason); a high-risk design choice as a weighted matrix (criteria, weights, scores, totals)"),
   nv("V&V before deployment", "attach the verification and validation record of a recent production release"),
   threeEnvironments,
   currency,
