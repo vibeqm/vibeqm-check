@@ -7,7 +7,7 @@
 export type Status = "met" | "not-met" | "not-visible" | "in-place";
 
 /** The VibeQM framework version these checks follow; a claim names it (VQM_SPEC §13). */
-export const FRAMEWORK_VERSION = "0.4.9";
+export const FRAMEWORK_VERSION = "0.4.10";
 
 export interface CheckResult {
   level: number;

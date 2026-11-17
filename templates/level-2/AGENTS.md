@@ -53,7 +53,8 @@ Copilot all read AGENTS.md. -->
 ## Questions
 
 When a requirement is unclear and the choice matters, ask me with two to four
-options, your recommendation first and why. Record my answer with the requirement.
+options, your recommendation first and why. Record my answer with the requirement,
+and whether I took your recommendation (when I didn't, my reason).
 
 ## Records
 

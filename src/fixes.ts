@@ -81,11 +81,11 @@ const FIXES: Record<string, (r: CheckResult) => FixBody> = {
       steps: b
         ? [
             `Complete the ${b[1]} that init created: ${b[2]} blanks left. Draft the requirements from what the repository already does (its README, its routes, its commands) and ask the person to confirm or correct them; delete what doesn't apply.`,
-            "Add to the rules file: every change starts from a requirement; when a request is unclear, ask the person clarifying questions with two to four options, your recommendation first, before writing code, and record the answer with the requirement.",
+            "Add to the rules file: every change starts from a requirement; when a request is unclear, ask the person clarifying questions with two to four options, your recommendation first, before writing code, and record the answer with the requirement, saying whether they took your recommendation and their reason when they didn't.",
           ]
         : [
             "Keep requirements as issues (add `.github/ISSUE_TEMPLATE/` with an acceptance-criteria section) or in `VibeQM/requirements/`.",
-            "Add to the rules file: every change starts from a requirement; when a request is unclear, ask the person clarifying questions with two to four options, your recommendation first, before writing code, and record the answer with the requirement.",
+            "Add to the rules file: every change starts from a requirement; when a request is unclear, ask the person clarifying questions with two to four options, your recommendation first, before writing code, and record the answer with the requirement, saying whether they took your recommendation and their reason when they didn't.",
           ],
       verify: RERUN,
       minutes: 15,
@@ -170,7 +170,8 @@ const FIXES: Record<string, (r: CheckResult) => FixBody> = {
   "Decision records with options": () => ({
     why: "Recording the options considered shows a decision was made, not drifted into, and settles the question when it comes back.",
     steps: [
-      "Keep a decision log; each entry records the options considered, the recommendation and the choice, with a date and who decided.",
+      "Keep a decision log; each entry records the options considered, the recommendation, the choice, whether the recommendation was followed or overruled (with the reason when overruled), a date and who decided.",
+      "Add to the rules file: when a decision chooses how to build something in a high-risk area (login, payments, personal data, deleting data, security settings, deployment, new dependencies), draft a weighted decision matrix (criteria, a weight each, a score per option, weighted totals, your recommendation) and ask me to adjust it and decide.",
       PROOF("Decision records with options"),
     ],
     verify: RERUN,
@@ -360,6 +361,16 @@ const FIXES: Record<string, (r: CheckResult) => FixBody> = {
     ],
     verify: "Make the next commit and check `git log -1` shows the trailer. Rerun once most recent commits carry it.",
     minutes: 10,
+  }),
+  "Change trailers": () => ({
+    why: "A commit should lead back to why it was made: which requirement, which decision, and whether the person took the AI's recommendation or overruled it.",
+    steps: [
+      "Add to the rules file: every commit ends with the trailers `Requirement: <requirement or issue id>` and `Origin: ai-recommended | person-override | person-request`, plus `Decision: <decision record id>` when a decision governs the change (always, for person-override). The agent writes them; the person never has to.",
+      "Add a `commit-msg` hook, or a CI check on pull requests, that rejects a commit without `Requirement:` and a valid `Origin:`.",
+      "When the owner merges over a blocking review finding, record the finding, the reason and who decided (the pull request, or the decision log).",
+    ],
+    verify: "Make the next commit and check `git log -1 --format=%(trailers)` shows the trailers. Rerun once the last 20 changes carry them.",
+    minutes: 15,
   }),
   "Preflight beyond green builds": () => ({
     why: "Green unit tests don't prove the product works; look at the real output.",

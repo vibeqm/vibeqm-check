@@ -12,6 +12,6 @@ fields). Each one says how we will know it is met. Replace the example row.
 When a requirement was unclear, the agent asked with options, recommendation first.
 The answers stay here.
 
-| Requirement | Question | Options offered (recommendation first) | Answer, and who gave it |
-|:--|:--|:--|:--|
-| REQ-001 | <the question> | <option A (recommended)> / <option B> | <the answer>, <name>, <date> |
+| Requirement | Question | Options offered (recommendation first) | Answer, and who gave it | Recommendation taken? |
+|:--|:--|:--|:--|:--|
+| REQ-001 | <the question> | <option A (recommended)> / <option B> | <the answer>, <name>, <date> | <yes / no: the person's reason> |

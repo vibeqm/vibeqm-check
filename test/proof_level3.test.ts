@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { aiBudget, lessonsRecorded, provenance, rulesShort } from "../src/checks/level3.js";
+import { aiBudget, changeTrailers, lessonsRecorded, provenance, rulesShort } from "../src/checks/level3.js";
 import { applyProofs, findProofFile, loadProofs } from "../src/proof.js";
 import type { CheckResult } from "../src/types.js";
 
@@ -53,6 +53,19 @@ test("proof file is found in a parent folder and validated", () => {
   assert.equal(loadProofs(f!).length, 1);
   writeFileSync(join(parent, "vqm-proof.json"), JSON.stringify({ proofs: [{ gate: "x" }] }));
   assert.throws(() => loadProofs(f!), /needs "evidence"/);
+});
+
+test("change trailers: Requirement and a valid Origin on every sampled change", () => {
+  assert.equal(changeTrailers(repo("work")).status, "not-met");
+  assert.equal(changeTrailers(repo("work\n\nRequirement: REQ-1\nOrigin: ai-recommended")).status, "met");
+  assert.equal(changeTrailers(repo("work\n\nRequirement: REQ-1\nOrigin: maybe")).status, "not-met");
+});
+
+test("change trailers: a person-override needs a Decision", () => {
+  const without = changeTrailers(repo("work\n\nRequirement: REQ-1\nOrigin: person-override"));
+  assert.equal(without.status, "not-met");
+  assert.match(without.evidence, /0 of 1 person-override/);
+  assert.equal(changeTrailers(repo("work\n\nRequirement: REQ-1\nDecision: DEC-2\nOrigin: person-override")).status, "met");
 });
 
 test("provenance: a model trailer with a version counts", () => {
